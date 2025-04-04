@@ -3,14 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS 
 from flask_jwt_extended import JWTManager
 from flask_socketio import SocketIO
-from app.routes.auth_routes import auth_bp
-from app.routes.user_routes import user_bp
-from app.routes.listing_routes import listing_bp
-from app.routes.bid_routes import bid_bp
-from app.routes.chat_routes import chat_bp
-from app.routes.saved_routes import saved_bp
-from app.routes.notify_routes import notify_bp
-from app.config import Config
+from .config import Config
 
 db = SQLAlchemy()
 jwt = JWTManager()
@@ -24,6 +17,14 @@ def create_app():
     db.init_app(app)
     jwt.init_app(app)
     socketio.init_app(app)
+
+    from .routes.auth_routes import auth_bp
+    from .routes.user_routes import user_bp
+    from .routes.listing_routes import listing_bp
+    from .routes.bid_routes import bid_bp
+    from .routes.chat_routes import chat_bp
+    from .routes.saved_routes import saved_bp
+    from .routes.notify_routes import notify_bp
 
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(user_bp, url_prefix='/users')

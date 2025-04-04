@@ -1,7 +1,7 @@
 from app import db 
 from datetime import datetime 
 
-class User(db.Model):
+class Users(db.Model):
     user_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False) 
@@ -11,7 +11,7 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow) 
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-class Listing(db.Model):
+class Listings(db.Model):
     listing_id = db.Column(db.Integer, primary_key=True) 
     item_name = db.Column(db.String(255), nullable=False)  
     description = db.Column(db.Text)  
@@ -25,7 +25,7 @@ class Listing(db.Model):
 
     user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=False)
 
-class ChatMessage(db.Model):
+class Chats(db.Model):
     chat_id = db.Column(db.Integer, primary_key=True)  
     message = db.Column(db.Text, nullable=False) 
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)  
@@ -34,7 +34,7 @@ class ChatMessage(db.Model):
     receiver_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=False)  
     listing_id = db.Column(db.Integer, db.ForeignKey('listing.listing_id'), nullable=False)
 
-class Bid(db.Model):
+class Bids(db.Model):
     bid_id = db.Column(db.Integer, primary_key=True)  
     bid_amount = db.Column(db.Float, nullable=False)  
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)  
@@ -42,14 +42,14 @@ class Bid(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=False)  
     listing_id = db.Column(db.Integer, db.ForeignKey('listing.listing_id'), nullable=False)  
 
-class SavedListing(db.Model):
+class Saved_Listings(db.Model):
     saved_listing_id = db.Column(db.Integer, primary_key=True)  
     saved_at = db.Column(db.DateTime, default=datetime.utcnow) 
 
     user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=False)  
     listing_id = db.Column(db.Integer, db.ForeignKey('listing.listing_id'), nullable=False)
 
-class Notification(db.Model):
+class Notifications(db.Model):
     notification_id = db.Column(db.Integer, primary_key=True)  
     message = db.Column(db.Text, nullable=False) 
     read_status = db.Column(db.Boolean, default=False)  

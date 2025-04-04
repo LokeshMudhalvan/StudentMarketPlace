@@ -10,7 +10,7 @@ from app.routes.bid_routes import bid_bp
 from app.routes.chat_routes import chat_bp
 from app.routes.saved_routes import saved_bp
 from app.routes.notify_routes import notify_bp
-from config import Config
+from app.config import Config
 
 db = SQLAlchemy()
 jwt = JWTManager()

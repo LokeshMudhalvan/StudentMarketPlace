@@ -23,31 +23,31 @@ class Listings(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)  
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow) 
 
-    user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
 
 class Chats(db.Model):
     chat_id = db.Column(db.Integer, primary_key=True)  
     message = db.Column(db.Text, nullable=False) 
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)  
 
-    sender_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=False)  
-    receiver_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=False)  
-    listing_id = db.Column(db.Integer, db.ForeignKey('listing.listing_id'), nullable=False)
+    sender_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)  
+    receiver_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)  
+    listing_id = db.Column(db.Integer, db.ForeignKey('listings.listing_id'), nullable=False)
 
 class Bids(db.Model):
     bid_id = db.Column(db.Integer, primary_key=True)  
     bid_amount = db.Column(db.Float, nullable=False)  
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)  
 
-    user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=False)  
-    listing_id = db.Column(db.Integer, db.ForeignKey('listing.listing_id'), nullable=False)  
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)  
+    listing_id = db.Column(db.Integer, db.ForeignKey('listings.listing_id'), nullable=False)  
 
 class Saved_Listings(db.Model):
     saved_listing_id = db.Column(db.Integer, primary_key=True)  
     saved_at = db.Column(db.DateTime, default=datetime.utcnow) 
 
-    user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=False)  
-    listing_id = db.Column(db.Integer, db.ForeignKey('listing.listing_id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)  
+    listing_id = db.Column(db.Integer, db.ForeignKey('listings.listing_id'), nullable=False)
 
 class Notifications(db.Model):
     notification_id = db.Column(db.Integer, primary_key=True)  
@@ -55,5 +55,5 @@ class Notifications(db.Model):
     read_status = db.Column(db.Boolean, default=False)  
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)  
 
-    user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=False) 
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False) 
 

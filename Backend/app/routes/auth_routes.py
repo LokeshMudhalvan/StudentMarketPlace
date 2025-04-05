@@ -14,7 +14,12 @@ def register():
         hashed_password = generate_password_hash(data["password"], method='pbkdf2:sha256')
         if Users.query.filter_by(email=data['email']).first():
             return jsonify({"error":"User exists already"}), 400
-        user = Users(name=data['username'], email=data['email'], password_hash=hashed_password, university=data['university'])
+        user = Users(
+            name=data['username'], 
+            email=data['email'], 
+            password_hash=hashed_password, 
+            university=data['university']
+        )
         db.session.add(user)
         db.session.commit()
 
@@ -22,7 +27,7 @@ def register():
     
     except Exception as e:
         print(f'An error occured while trying to register:{e}')
-        return jsonify({"error":"An error occured while trying to register"}), 400
+        return jsonify({"error":"An error occured while trying to register"}), 500
 
 @auth_bp.route('/login', methods=["POST"])
 def login():
@@ -39,4 +44,4 @@ def login():
     
     except Exception as e:
         print(f'An error occured while trying to login:{e}')
-        return jsonify({"error":"An error occured while trying to login"}), 400
+        return jsonify({"error":"An error occured while trying to login"}), 500

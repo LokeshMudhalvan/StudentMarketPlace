@@ -7,7 +7,7 @@ from werkzeug.utils import secure_filename
 
 listing_bp = Blueprint('listing', __name__)
 
-ALLOWED_EXTENSIONS = ['png', 'jpg', 'jpeg']
+ALLOWED_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'mp4', 'avi', 'mov']
 UPLOADS_DIR = './app/static/listing-images'
 
 os.makedirs(UPLOADS_DIR, exist_ok=True)

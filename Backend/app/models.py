@@ -29,6 +29,9 @@ class Chats(db.Model):
     chat_id = db.Column(db.Integer, primary_key=True)  
     message = db.Column(db.Text, nullable=False) 
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)  
+    status = db.Column(db.String(20), default="sent")  
+    media_url = db.Column(db.String(200), nullable=True) 
+    deleted = db.Column(db.Boolean, default=False)  
 
     sender_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)  
     receiver_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)  

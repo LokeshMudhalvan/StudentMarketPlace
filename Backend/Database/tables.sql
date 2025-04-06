@@ -34,6 +34,9 @@ CREATE TABLE chats (
     listing_id INT NOT NULL REFERENCES listings(listing_id),
     sender_id INT NOT NULL REFERENCES users(user_id),
     receiver_id INT NOT NULL REFERENCES users(user_id),
+    status VARCHAR(20) DEFAULT 'sent',
+    media_url VARCHAR(200),
+    deleted BOOLEAN DEFAULT FALSE,
     message TEXT NOT NULL,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

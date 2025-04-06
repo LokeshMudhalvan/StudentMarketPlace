@@ -23,7 +23,7 @@ def register():
         db.session.add(user)
         db.session.commit()
 
-        return jsonify({"message": "User registered successfully"}), 201
+        return jsonify({"message": "User registered successfully"}), 200
     
     except Exception as e:
         print(f'An error occured while trying to register:{e}')

@@ -45,7 +45,7 @@ class Bids(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)  
     listing_id = db.Column(db.Integer, db.ForeignKey('listings.listing_id'), nullable=False)  
 
-class Saved_Listings(db.Model):
+class SavedListings(db.Model):
     saved_listing_id = db.Column(db.Integer, primary_key=True)  
     saved_at = db.Column(db.DateTime, default=datetime.utcnow) 
 

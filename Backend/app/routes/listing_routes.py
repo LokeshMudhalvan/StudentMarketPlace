@@ -52,7 +52,7 @@ def create_listing():
         db.session.add(listing)
         db.session.commit()
 
-        return jsonify({"message": "Listing created successfully"}), 201
+        return jsonify({"message": "Listing created successfully"}), 200
     
     except Exception as e:
         print(f'An error occured while trying to register listing: {e}')

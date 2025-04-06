@@ -3,11 +3,8 @@ from app import db, socketio
 from app.models import Chats
 from flask_jwt_extended import jwt_required, get_jwt_identity
 import os
-import json
 from werkzeug.utils import secure_filename
-from datetime import datetime
-from flask_socketio import SocketIO, send, join_room, leave_room
-from io import BytesIO
+from flask_socketio import send, join_room, leave_room
 from .listing_routes import is_valid_filename
 
 chat_bp = Blueprint('chat', __name__)

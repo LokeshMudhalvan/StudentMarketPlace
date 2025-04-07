@@ -1,0 +1,28 @@
+body {
+    --header-theme-icon-color: #ffffff;
+    --header-background-color: #559119; 
+    --background-color: #ffffff;   
+}
+
+body.dark {
+    --header-theme-icon-color: #ffffff; 
+    --header-background-color: #8E2BFF;   
+    --background-color: #000;    
+}
+
+body {
+    background-color: var(--background-color);
+    
+    .header {
+        background-color: var(--header-background-color);
+    }
+    
+    .icon {
+        color: var(--header-theme-icon-color);
+    }
+    
+    button[type="submit"] {
+        background-color: var(--header-background-color);
+    }
+}
+

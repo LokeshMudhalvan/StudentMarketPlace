@@ -9,17 +9,22 @@ auth_bp = Blueprint('auth', __name__)
 @auth_bp.route('/register', methods=["POST"])
 def register():
     try:
-        print('Entering register')
         data = request.get_json()
+        if not data['username'] or not data['email'] or not data['password']:
+            return jsonify({"error":"Fill in the required fields (Name, Email and Password)"}), 401
+        
         hashed_password = generate_password_hash(data["password"], method='pbkdf2:sha256')
+
         if Users.query.filter_by(email=data['email']).first():
             return jsonify({"error":"User exists already"}), 400
+        
         user = Users(
             name=data['username'], 
             email=data['email'], 
             password_hash=hashed_password, 
-            university=data['university']
+            university=data['university'] if data['university'] else 'None'
         )
+        
         db.session.add(user)
         db.session.commit()
 
@@ -32,13 +37,19 @@ def register():
 @auth_bp.route('/login', methods=["POST"])
 def login():
     try:
-        print('Entering Login')
         data = request.get_json()
+        if not data['email'] or not data['password']:
+            return jsonify({"error": "Email and Password are required fields"}), 401
+        
         user = Users.query.filter_by(email=data['email']).first()
 
         if user and check_password_hash(user.password_hash, data['password']):
             access_token = create_access_token(user.user_id)
-            return jsonify(access_token=access_token), 200
+            return jsonify(
+                {"access_token": access_token,
+                  "message": "Login successfull"
+                }
+            ), 200
 
         return jsonify({"error": "Invalid credentials"}), 401
     

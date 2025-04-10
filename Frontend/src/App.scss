@@ -2,16 +2,19 @@ body {
     --header-theme-icon-color: #ffffff;
     --header-background-color: #559119; 
     --background-color: #ffffff;   
+    --text-color: #000;
 }
 
 body.dark {
     --header-theme-icon-color: #ffffff; 
     --header-background-color: #8E2BFF;   
     --background-color: #000;    
+    --text-color: #ffffff;
 }
 
 body {
     background-color: var(--background-color);
+    color: var(--text-color);
     
     .header {
         background-color: var(--header-background-color);
@@ -23,6 +26,16 @@ body {
     
     button[type="submit"] {
         background-color: var(--header-background-color);
+    }
+
+    img.object-cover {
+        height: 200px;
+        width: 150px;
+    }
+
+    .listing-card {
+        height: 395.95px;
+        max-width: 270px;
     }
 }
 

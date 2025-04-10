@@ -1,7 +1,7 @@
 import {useState} from "react";
 import axios from 'axios'; 
 import { Box, Button, Container, TextField, Typography, Paper, Link } from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom'; 
+import { Link as RouterLink, useNavigate} from 'react-router-dom'; 
 import Header from "../components/header";
 
 const Login = () => {
@@ -11,6 +11,7 @@ const Login = () => {
     const [requiredFieldEmailError, setRequiredFieldEmailError] = useState(false);
     const [requiredFieldPasswordError, setRequiredFieldPasswordError] = useState(false);
     const [message, setMessage] = useState('');
+    const navigate = useNavigate();
 
     const handleSubmit = async(e) => {
         setError('');
@@ -43,6 +44,10 @@ const Login = () => {
                 console.log(localStorage.getItem('Token'));
 
                 setMessage(response.data.message);
+
+                setTimeout(() => {
+                    navigate('/dashboard');
+                }, 2000);
             }
 
         } catch (e) {

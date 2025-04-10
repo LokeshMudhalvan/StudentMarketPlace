@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from app import db
 from app.models import Users
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_jwt_extended import create_access_token
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -56,3 +56,12 @@ def login():
     except Exception as e:
         print(f'An error occured while trying to login:{e}')
         return jsonify({"error":"An error occured while trying to login"}), 500
+    
+@auth_bp.route('/verify', methods=["GET"])
+@jwt_required()
+def verify_token():
+    try:
+        user = get_jwt_identity()
+        return jsonify({'valid': True, 'user': user}), 200
+    except Exception as e:
+        return jsonify({'valid': False, 'error': str(e)}), 401

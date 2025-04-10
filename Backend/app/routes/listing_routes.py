@@ -94,6 +94,43 @@ def show_listings():
         print(f'An error occured while trying to show listings:{e}')
         return jsonify({"error":"An error occured while trying to show listings"}), 500
     
+@listing_bp.route('/show-individual-listings', methods=["GET"])
+@jwt_required()
+def show_individual_listings():
+    try:
+        user_id = get_jwt_identity()
+        listings = Listings.query.filter_by(user_id=user_id).all()
+        listing_display = []
+
+        for listing in listings:
+            listing_info = {
+                'listing_id': listing.listing_id,
+                'item_name': listing.item_name,
+                'description': listing.description,
+                'price': listing.price,
+                'created_at': listing.created_at,
+                'condition': listing.condition,
+                'category': listing.category,
+                'university': listing.university,
+                'user_id': listing.user_id
+            }
+
+            if listing.images:
+                image_urls = []
+                number_of_images = len(listing.images)
+                for i in range(number_of_images):
+                    image_url = url_for('static', filename=f'listing-images/{listing.images[i].rsplit('/', 1)[1]}')
+                    image_urls.append(image_url) 
+            
+                listing_info['image_urls'] = image_urls
+            listing_display.append(listing_info)
+        
+        return jsonify(listing_display), 200
+    
+    except Exception as e:
+        print(f'An error occured while trying to show user listings:{e}')
+        return jsonify({"error":"An error occured while trying to show user listings"}), 500
+    
 @listing_bp.route('/show/<int:listing_id>', methods=['GET'])
 @jwt_required()
 def show_listing(listing_id):
@@ -167,7 +204,38 @@ def delete_listing(listing_id):
         db.session.delete(listing)
         db.session.commit()
 
-        return jsonify({"message": "Listing deleted successfully"}), 200
+        listings = Listings.query.all()
+        listing_display = []
+
+        for listing in listings:
+            listing_info = {
+                'listing_id': listing.listing_id,
+                'item_name': listing.item_name,
+                'description': listing.description,
+                'price': listing.price,
+                'created_at': listing.created_at,
+                'condition': listing.condition,
+                'category': listing.category,
+                'university': listing.university,
+                'user_id': listing.user_id
+            }
+
+            if listing.images:
+                image_urls = []
+                number_of_images = len(listing.images)
+                for i in range(number_of_images):
+                    image_url = url_for('static', filename=f'listing-images/{listing.images[i].rsplit('/', 1)[1]}')
+                    image_urls.append(image_url) 
+            
+                listing_info['image_urls'] = image_urls
+            listing_display.append(listing_info)
+
+        return jsonify(
+            {
+                "message": "Listing deleted successfully",
+                "listings": listing_display
+            }
+        ), 200
 
     except Exception as e:
         print(f'An error occured while trying to delete listing: {e}')

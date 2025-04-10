@@ -1,7 +1,7 @@
 import {useState} from "react";
 import axios from 'axios'; 
 import { Box, Button, Container, TextField, Typography, Paper, Link } from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom'; 
+import { Link as RouterLink, useNavigate} from 'react-router-dom'; 
 import Header from "../components/header";
 
 const Registration = () => {
@@ -14,6 +14,7 @@ const Registration = () => {
     const [requiredFieldNameError, setRequiredFieldNameError] = useState(false);
     const [error, setError] = useState('');
     const [message, setMessage] = useState('');
+    const navigate = useNavigate();
 
     const handleSubmit = async(e) => {
         setError('');
@@ -47,6 +48,11 @@ const Registration = () => {
             const response = await axios.post('http://localhost:5001/auth/register', registrationInfo);
             console.log('User registered successfully');
             setMessage(response.data.message);
+
+            setTimeout(() => {
+                navigate('/');
+            }, 2000);
+
         } catch (e) {
             console.error('Error occured while logging in:', e);
             setError(e.response.data.error);

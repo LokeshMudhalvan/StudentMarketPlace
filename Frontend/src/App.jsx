@@ -5,6 +5,7 @@ import Registration from './pages/registration';
 import Dashboard from './pages/dashboard';
 import YourListings from './pages/yourListings';
 import AddListing from './pages/addListing';
+import EditListing from './pages/editListing';
 import './App.scss'
 
 function App() {
@@ -31,6 +32,10 @@ function App() {
 
           <Route path="/add-listing" element={
             <AddListing/>
+          }/>
+
+          <Route path="/edit-listing/:listing_id" element={
+            <EditListing/>
           }/>
         </Routes>
       </Router>

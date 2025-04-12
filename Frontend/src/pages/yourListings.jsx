@@ -17,6 +17,8 @@ import {
   } from "@mui/material";
 import AddIcon from '@mui/icons-material/Add'; 
 import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
+
 import Header from "../components/header";
 import useAuth from "../hooks/auth";
 
@@ -94,7 +96,6 @@ const YourListings = () => {
 
                 {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
 
-                {/* Add Listing Button */}
                 <Box display="flex" justifyContent="flex-end" mb={3}>
                     <Button
                         variant="contained"
@@ -138,14 +139,24 @@ const YourListings = () => {
                                             <Typography variant="h6" fontWeight="bold">
                                                 {listing.item_name}
                                             </Typography>
-                                            <Tooltip title="Delete Listing">
-                                                <IconButton
-                                                    color="error"
-                                                    onClick={() => handleDeleteListing(listing.listing_id)}
-                                                >
-                                                    <DeleteIcon />
-                                                </IconButton>
-                                            </Tooltip>
+                                            <Box display="flex" alignItems="center" gap={1}>
+                                                <Tooltip title="Edit Listing">
+                                                    <IconButton
+                                                        color="primary"
+                                                        onClick={() => navigate(`/edit-listing/${listing.listing_id}`)}
+                                                    >
+                                                        <EditIcon />
+                                                    </IconButton>
+                                                </Tooltip>
+                                                <Tooltip title="Delete Listing">
+                                                    <IconButton
+                                                        color="error"
+                                                        onClick={() => handleDeleteListing(listing.listing_id)}
+                                                    >
+                                                        <DeleteIcon />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            </Box>
                                         </Box>
                                         <Typography variant="body2" color="text.secondary">
                                             Condition: {listing.condition}

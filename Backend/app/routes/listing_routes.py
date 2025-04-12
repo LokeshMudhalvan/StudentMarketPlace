@@ -168,7 +168,7 @@ def show_listing(listing_id):
 @jwt_required()
 def update_listing(listing_id):
     try:
-        data = request.get_json()
+        data = request.form.to_dict()
 
         listing = Listings.query.get_or_404(listing_id)
 
@@ -182,6 +182,20 @@ def update_listing(listing_id):
         listing.condition = data.get('condition',listing.condition)
         listing.category = data.get('category',listing.category)
         listing.university = data.get('university',listing.university)
+
+        images = []
+        
+        if 'images' in request.files:
+            uploaded_images = request.files.getlist('images')
+            for image in uploaded_images:
+                if image and is_valid_filename(image.filename):
+                    filename = secure_filename(image.filename)
+                    file_path = os.path.join(UPLOADS_DIR, filename)
+                    image.save(file_path)
+                    images.append(file_path)
+                else:
+                    return jsonify({"error": "Image file path is not valid"}), 400
+            listing.images = images            
 
         db.session.commit()
 

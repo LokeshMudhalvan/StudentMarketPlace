@@ -16,6 +16,7 @@ import {
 import Header from "../components/header";
 import useAuth from "../hooks/auth";
 import { useNavigate } from "react-router-dom";
+import { useDropzone } from 'react-dropzone';
 
 const AddListing = () => {
   const { authenticated, authLoading } = useAuth();
@@ -35,42 +36,42 @@ const AddListing = () => {
   const [university, setUniversity] = useState('');
 
   useEffect(() => {
-        if (!authenticated && !authLoading) {
+    if (!authenticated && !authLoading) {
+      navigate('/');
+      return;
+    }
+
+    const fetchUniversity = async () => {
+      try {
+        setError('');
+        setLoading(true);
+
+        const response = await axios.get("http://localhost:5001/users/university-name", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+            
+        if (response.data) {
+          setUniversity(response.data.university);
+        }
+
+      } catch (e) {
+        if (e.response && e.response.status === 422) {
           navigate('/');
-          return null;
+        } else {
+          console.error('An error occurred while fetching university name:', e);
+          setError(e.response?.data?.msg || 'An error occurred while fetching university name');
         }
-
-        const fetchUniversity = async () => {
-            try {
-                setError('');
-                setLoading(true);
-
-                const response = await axios.get("http://localhost:5001/users/university-name", {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
-                
-                if (response.data) {
-                    setUniversity(response.data.university);
-                }
-
-            } catch (e) {
-                console.error('An error occured while fetching university name:', e);
-                setError(e.response.data.msg || "An error occured while fetching university name");
-            } finally {
-                setLoading(false);
-            }
-        }
-        
-  });
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchUniversity();
+  }, [authenticated, authLoading, navigate, token]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleImageChange = (e) => {
-    setImages(e.target.files);
   };
 
   const handleSubmit = async (e) => {
@@ -88,7 +89,7 @@ const AddListing = () => {
     data.append("university", university);
 
     for (let i = 0; i < images.length; i++) {
-      data.append("images", images[i]);
+      data.append("images", images[i].file);
     }
 
     try {
@@ -111,11 +112,46 @@ const AddListing = () => {
         setImages([]);
       }
     } catch (e) {
-      console.error('An error occured while adding listing:', e);
-      setError(e.response.data.msg || "An error occured while trying to add listing");
+      console.error('An error occurred while adding listing:', e);
+      setError(e.response?.data?.msg || "An error occurred while trying to add listing");
     } finally {
       setLoading(false);
     }
+  };
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    accept: { 'image/*': [] },
+    multiple: true,
+    onDrop: (acceptedFiles) => {
+      const newImages = acceptedFiles.map(file => ({
+        id: Math.random().toString(36).substring(2),
+        file: file,
+        preview: URL.createObjectURL(file)
+      }));
+      
+      setImages(prevImages => [...prevImages, ...newImages]);
+    }
+  });
+
+  useEffect(() => {
+    return () => {
+      images.forEach(image => {
+        if (image.preview) {
+          URL.revokeObjectURL(image.preview);
+        }
+      });
+    };
+  }, [images]);
+
+  const removeImage = (index) => {
+    setImages(prevImages => {
+      const updatedImages = [...prevImages];
+      if (updatedImages[index].preview) {
+        URL.revokeObjectURL(updatedImages[index].preview);
+      }
+      updatedImages.splice(index, 1);
+      return updatedImages;
+    });
   };
 
   return (
@@ -137,7 +173,7 @@ const AddListing = () => {
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         {success && <Alert severity="success" sx={{ mb: 2 }}>Listing added successfully</Alert>}
 
-        <form onSubmit={handleSubmit} encType="multipart/form-data">
+        <form onSubmit={handleSubmit}>
             <TextField
             fullWidth
             label="Item Name"
@@ -201,24 +237,66 @@ const AddListing = () => {
             <Typography fontWeight="medium" gutterBottom>
                 Upload Images
             </Typography>
-            <Button
-                variant="outlined"
-                component="label"
-                fullWidth
+            
+            <Box
+              {...getRootProps()}
+              sx={{
+                border: "2px dashed #ccc",
+                borderRadius: 2,
+                padding: 3,
+                textAlign: "center",
+                backgroundColor: isDragActive ? "#f0f0f0" : "#fafafa",
+                cursor: "pointer",
+                mb: 2,
+              }}
             >
-                Choose Images
-                <input
-                type="file"
-                hidden
-                name="images"
-                multiple
-                accept="image/*"
-                onChange={handleImageChange}
-                />
-            </Button>
-            <Typography variant="body2" color="text.secondary" mt={1}>
-                {images.length > 0 ? `${images.length} image(s) selected` : "No images selected"}
-            </Typography>
+              <input {...getInputProps()} />
+              <Typography color="textSecondary">
+                {isDragActive ? "Drop images here..." : "Drag & drop or click to select images"}
+              </Typography>
+            </Box>
+
+            <Box display="flex" flexWrap="wrap" gap={2}>
+              {images.map((image, index) => (
+                <Box
+                  key={image.id}
+                  position="relative"
+                  sx={{
+                    width: 100,
+                    height: 100,
+                    borderRadius: 2,
+                    overflow: "hidden",
+                    boxShadow: 2,
+                  }}
+                >
+                  <img
+                    src={image.preview}
+                    alt={`preview-${index}`}
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
+                  <Button
+                    size="small"
+                    onClick={() => removeImage(index)}
+                    sx={{
+                      position: "absolute",
+                      top: 0,
+                      right: 0,
+                      minWidth: "auto",
+                      padding: "2px 6px",
+                      fontSize: "0.75rem",
+                      backgroundColor: "rgba(0,0,0,0.6)",
+                      color: "white",
+                      borderRadius: "0 0 0 6px",
+                      '&:hover': {
+                        backgroundColor: "rgba(0,0,0,0.8)"
+                      }
+                    }}
+                  >
+                    ✕
+                  </Button>
+                </Box>
+              ))}
+            </Box>
             </Box>
 
             <Box mt={4} display="flex" justifyContent="center">

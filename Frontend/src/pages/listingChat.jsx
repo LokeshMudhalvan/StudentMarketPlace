@@ -93,7 +93,6 @@ const ListingChat = () => {
         const otherUserId = Number(userId) === Number(seller_id) ? Number(buyer_id) : Number(seller_id);
         const numListingId = Number(listing_id);
         
-        // Ensure data.media_url is always an array
         const normalizedData = {
           ...data,
           sender_id: Number(data.sender_id),
@@ -168,7 +167,6 @@ const ListingChat = () => {
           }
         );
         
-        // Normalize messages data to ensure media_url is always an array
         const normalizedMessages = response.data.messages.map(msg => ({
           ...msg,
           media_url: Array.isArray(msg.media_url) ? msg.media_url : []
@@ -223,15 +221,13 @@ const ListingChat = () => {
         },
       });
 
-      // Create a new message for local display
-      // Media URL will be updated when socket message arrives
       const newMessage = {
         message: message,
         sender_id: Number(userId),
         receiver_id: Number(userId) === Number(seller_id) ? Number(buyer_id) : Number(seller_id),
         listing_id: Number(listing_id),
         timestamp: new Date().toISOString(),
-        media_url: mediaPreview ? [mediaPreview] : [], // Always an array
+        media_url: mediaPreview ? [mediaPreview] : [], 
         status: "sent",
         deleted: false,
       };
@@ -266,12 +262,10 @@ const ListingChat = () => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  // Helper function to safely render media
   const renderMedia = (mediaUrls) => {
     if (!mediaUrls || mediaUrls.length === 0) return null;
     
     return mediaUrls.map((url, idx) => {
-      // Handle both relative paths and full URLs
       const mediaUrl = url.startsWith('http') ? url : `http://localhost:5001${url}`;
       
       return (

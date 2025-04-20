@@ -26,7 +26,6 @@ def send_message():
         receiver_id = data["receiver_id"]
         message = data["message"]
 
-        # Initialize as empty array
         media_urls = []
 
         if 'media' in request.files:
@@ -36,7 +35,6 @@ def send_message():
                     filename = secure_filename(media.filename)
                     media_path = os.path.join(CHATS_DIR, filename)
                     media.save(media_path)
-                    # Add relative path to array
                     media_urls.append(f"/static/chat-media/{filename}")
 
         new_message = Chats(
@@ -44,7 +42,7 @@ def send_message():
             sender_id=sender_id,
             receiver_id=receiver_id,
             listing_id=listing_id,
-            media_url=media_urls  # Store as array consistently
+            media_url=media_urls 
         )
 
         db.session.add(new_message)
@@ -52,15 +50,15 @@ def send_message():
 
         socketio.emit('new_message', {
             'message': message,
-            'sender_id': int(sender_id),  # Ensure consistent typing
+            'sender_id': int(sender_id), 
             'receiver_id': int(receiver_id),
             'listing_id': int(listing_id),
-            'media_url': media_urls,  # Always an array
+            'media_url': media_urls, 
             'timestamp': new_message.timestamp.isoformat(),
             'status': 'sent',
             'deleted': False,
-            'chat_id': new_message.chat_id  # Include ID for updates
-        }, room=str(receiver_id))  # Ensure room is string
+            'chat_id': new_message.chat_id 
+        }, room=str(receiver_id))
 
         return jsonify({"message": "Message sent successfully"}), 200
     

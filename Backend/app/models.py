@@ -36,6 +36,10 @@ class Chats(db.Model):
     sender_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)  
     receiver_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)  
     listing_id = db.Column(db.Integer, db.ForeignKey('listings.listing_id'), nullable=False)
+    
+    listing = db.relationship("Listings", backref="chats")
+    sender = db.relationship("Users", foreign_keys=[sender_id])
+    receiver = db.relationship("Users", foreign_keys=[receiver_id])
 
 class Bids(db.Model):
     bid_id = db.Column(db.Integer, primary_key=True)  

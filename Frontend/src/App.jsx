@@ -6,6 +6,7 @@ import Dashboard from './pages/dashboard';
 import YourListings from './pages/yourListings';
 import AddListing from './pages/addListing';
 import EditListing from './pages/editListing';
+import ListingChat from './pages/listingChat';
 import './App.scss'
 
 function App() {
@@ -37,6 +38,11 @@ function App() {
           <Route path="/edit-listing/:listing_id" element={
             <EditListing/>
           }/>
+
+          <Route path="/chat/:listing_id/:seller_id/:buyer_id" element={
+              <ListingChat/>
+            }
+          />
         </Routes>
       </Router>
     </div>

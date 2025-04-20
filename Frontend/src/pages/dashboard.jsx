@@ -1,6 +1,6 @@
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import {
     Card,
     CardContent,
@@ -10,18 +10,54 @@ import {
     Container,
     Box,
     CircularProgress,
-    Alert
+    Alert,
+    Button
   } from "@mui/material";
 import Header from "../components/header";
 import useAuth from "../hooks/auth";
 
 const Dashboard = () => {
     const token = localStorage.getItem('Token');
+    const [userId, setUserId] = useState();
     const { authenticated, authLoading } = useAuth();
     const [listings, setListings] = useState([]);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const fetchUserID = async () => { 
+            if (!authenticated && !authLoading) {
+                navigate('/'); 
+                return;
+            }
+    
+            try {
+                setLoading(true);
+                const response = await axios.get(`http://localhost:5001/users/user-id`, {
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                    },
+                  }
+                );
+        
+                if (response.data) {
+                    console.log(response.data);
+                    setUserId(response.data);
+                }
+            } catch (e) {
+                if (e.response && e.response.status === 422) {
+                    navigate('/');
+                } else {
+                    console.error('An error occured while fetching user id:', e);
+                    setError(e.response.data.msg || 'An error occured while fetching user id');
+                }
+            } finally {
+                setLoading(false);
+            }
+        }
+      fetchUserID();
+    }, []);
 
     useEffect (() => {
         if (!authenticated && !authLoading) {
@@ -113,6 +149,14 @@ const Dashboard = () => {
                                         <Typography variant="caption" color="text.secondary" mt={2} display="block">
                                             Posted by: {listing.user || "Unknown"}
                                         </Typography>
+                                        {listing.user_id !== userId && (
+                                            <Button
+                                                className="bg-green-600 text-white px-4 py-1 rounded mt-2"
+                                                onClick={() => navigate(`/chat/${listing.listing_id}/${listing.user_id}/${userId}`)}
+                                            >
+                                                Message Seller
+                                            </Button>
+                                        )}
                                     </CardContent>
                                 </Card>
                             </Grid>

@@ -1,0 +1,514 @@
+import { useState, useEffect, useRef } from "react";
+import axios from "axios";
+import { useParams, useNavigate } from "react-router-dom";
+import { 
+  Container, 
+  Box, 
+  Typography, 
+  TextField, 
+  Button, 
+  Paper, 
+  CircularProgress,
+  IconButton
+} from "@mui/material";
+import SendIcon from "@mui/icons-material/Send";
+import AttachFileIcon from "@mui/icons-material/AttachFile";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import Header from "../components/header";
+import useAuth from "../hooks/auth";
+import io from "socket.io-client";
+
+const ListingChat = () => {
+  const { listing_id, seller_id, buyer_id } = useParams();
+  const { authenticated, authLoading } = useAuth();
+  const [userId, setUserId] = useState(null);
+  const navigate = useNavigate();
+  const token = localStorage.getItem("Token");
+  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [listingInfo, setListingInfo] = useState(null);
+  const [mediaFile, setMediaFile] = useState(null);
+  const [mediaPreview, setMediaPreview] = useState("");
+  const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const socketRef = useRef(null);
+
+  useEffect(() => {
+    const fetchUserID = async () => { 
+        if (!authenticated && !authLoading) {
+            navigate('/'); 
+            return;
+        }
+
+        try {
+            setLoading(true);
+            const response = await axios.get(`http://localhost:5001/users/user-id`, {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
+    
+            if (response.data) {
+                console.log("User ID fetched:", response.data);
+                setUserId(response.data);
+            }
+        } catch (e) {
+            if (e.response && e.response.status === 422) {
+                navigate('/');
+            } else {
+                console.error('An error occurred while fetching user id:', e);
+                setError(e.response?.data?.msg || 'An error occurred while fetching user id');
+            }
+        } finally {
+            setLoading(false);
+        }
+    }
+    fetchUserID();
+  }, [authenticated, authLoading, navigate, token]);
+
+  useEffect(() => {
+    let socket = null;
+    
+    if (token && authenticated && !authLoading && userId) {
+      socket = io("http://localhost:5001", {
+        query: { token }
+      });
+      socketRef.current = socket;
+
+      socket.on("connect", () => {
+        console.log("Connected to socket server with user ID:", userId);
+      });
+
+      socket.on("connect_error", (error) => {
+        console.error("Socket connection error:", error);
+        setError("Failed to connect to chat server");
+      });
+
+      socket.on("new_message", (data) => {
+        console.log("Raw socket message received:", data);
+
+        const otherUserId = Number(userId) === Number(seller_id) ? Number(buyer_id) : Number(seller_id);
+        const numListingId = Number(listing_id);
+        
+        // Ensure data.media_url is always an array
+        const normalizedData = {
+          ...data,
+          sender_id: Number(data.sender_id),
+          receiver_id: Number(data.receiver_id),
+          listing_id: Number(data.listing_id),
+          media_url: Array.isArray(data.media_url) ? data.media_url : []
+        };
+        
+        if (
+          normalizedData.listing_id === numListingId && 
+          ((normalizedData.sender_id === Number(userId) && normalizedData.receiver_id === Number(otherUserId)) ||
+           (normalizedData.sender_id === Number(otherUserId) && normalizedData.receiver_id === Number(userId)))
+        ) {
+          console.log("Adding message to chat:", normalizedData);
+          setMessages((prevMessages) => [...prevMessages, normalizedData]);
+          scrollToBottom();
+        } else {
+          console.log("Message doesn't belong to this conversation");
+        }
+      });
+
+      return () => {
+        if (socket) {
+          console.log("Disconnecting socket");
+          socket.disconnect();
+        }
+      };
+    }
+  }, [authenticated, authLoading, userId, token, listing_id, seller_id, buyer_id]);
+
+  useEffect(() => {
+    const fetchListingInfo = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get(`http://localhost:5001/listings/show/${listing_id}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        setListingInfo(response.data);
+      } catch (e) {
+        if (e.response && e.response.status === 422) {
+            navigate('/');
+        } else {
+            console.error('An error occurred while loading the listings:', e);
+            setError(e.response?.data?.msg || 'An error occurred while loading the listings');
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const fetchMessages = async () => {
+      try {
+        setLoading(true);
+        console.log('Fetching messages with:');
+        console.log('- User ID:', userId);
+        console.log('- Seller ID:', seller_id);
+        console.log('- Buyer ID:', buyer_id);
+        console.log('- Other User ID:', Number(userId) === Number(seller_id) ? buyer_id : seller_id);
+        
+        const response = await axios.get(
+          `http://localhost:5001/chat/get-messages/${listing_id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            params: {
+              other_user_id: Number(userId) === Number(seller_id) ? buyer_id : seller_id,
+            },
+          }
+        );
+        
+        // Normalize messages data to ensure media_url is always an array
+        const normalizedMessages = response.data.messages.map(msg => ({
+          ...msg,
+          media_url: Array.isArray(msg.media_url) ? msg.media_url : []
+        }));
+        
+        setMessages(normalizedMessages);
+      } catch (e) {
+        if (e.response && e.response.status === 422) {
+            navigate('/');
+        } else {
+            console.error('An error occurred while fetching messages:', e);
+            setError(e.response?.data?.msg || 'An error occurred while fetching messages');
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (listing_id && seller_id && buyer_id && token && userId) {
+      fetchListingInfo();
+      fetchMessages();
+    }
+  }, [listing_id, seller_id, token, buyer_id, userId, navigate]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!message.trim() && !mediaFile) return;
+
+    try {
+      setLoading(true);
+      const formData = new FormData();
+      formData.append("listing_id", listing_id);
+      formData.append("receiver_id", Number(userId) === Number(seller_id) ? buyer_id : seller_id);
+      formData.append("message", message);
+
+      if (mediaFile) {
+        formData.append("media", mediaFile);
+      }
+
+      await axios.post("http://localhost:5001/chat/send-message", formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      // Create a new message for local display
+      // Media URL will be updated when socket message arrives
+      const newMessage = {
+        message: message,
+        sender_id: Number(userId),
+        receiver_id: Number(userId) === Number(seller_id) ? Number(buyer_id) : Number(seller_id),
+        listing_id: Number(listing_id),
+        timestamp: new Date().toISOString(),
+        media_url: mediaPreview ? [mediaPreview] : [], // Always an array
+        status: "sent",
+        deleted: false,
+      };
+      
+      setMessages((prevMessages) => [...prevMessages, newMessage]);
+      setMessage("");
+      setMediaFile(null);
+      setMediaPreview("");
+    } catch (e) {
+      console.error("Failed to send message:", e);
+      setError("Failed to send message");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMediaChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setMediaFile(file);
+      setMediaPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const clearMediaPreview = () => {
+    setMediaFile(null);
+    setMediaPreview("");
+  };
+
+  const formatTimestamp = (timestamp) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  // Helper function to safely render media
+  const renderMedia = (mediaUrls) => {
+    if (!mediaUrls || mediaUrls.length === 0) return null;
+    
+    return mediaUrls.map((url, idx) => {
+      // Handle both relative paths and full URLs
+      const mediaUrl = url.startsWith('http') ? url : `http://localhost:5001${url}`;
+      
+      return (
+        <Box
+          key={idx}
+          component="img"
+          src={mediaUrl}
+          alt={`Attachment ${idx + 1}`}
+          sx={{ 
+            maxWidth: "100%", 
+            borderRadius: 2,
+            mb: 1
+          }}
+          onError={(e) => {
+            console.error("Failed to load image:", url);
+            e.target.style.display = 'none';
+          }}
+        />
+      );
+    });
+  };
+
+  return (
+    <>
+      <Header/>
+      <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
+        <Paper 
+          elevation={3} 
+          sx={{ 
+            borderRadius: 2, 
+            overflow: "hidden",
+            height: "80vh",
+            display: "flex",
+            flexDirection: "column"
+          }}
+        >
+
+          <Box 
+            sx={{ 
+              bgcolor: "#f9f9f9", 
+              p: 2, 
+              borderBottom: "1px solid #e0e0e0",
+              display: "flex",
+              alignItems: "center"
+            }}
+          >
+            <IconButton 
+              onClick={() => navigate(-1)} 
+              sx={{ mr: 2 }}
+            >
+              <ArrowBackIcon/>
+            </IconButton>
+            
+            {listingInfo && (
+              <Box display="flex" alignItems="center">
+                <Box 
+                  component="img"
+                  src={listingInfo.image_urls ? `http://localhost:5001${listingInfo.image_urls[0]}` : "/placeholder.jpg"}
+                  alt={listingInfo.item_name}
+                  sx={{ 
+                    width: 50, 
+                    height: 50, 
+                    borderRadius: 1,
+                    objectFit: "cover",
+                    mr: 2
+                  }}
+                />
+                <Box>
+                  <Typography variant="h6" fontWeight="bold">
+                    {listingInfo.item_name}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    ${listingInfo.price} • {listingInfo.condition}
+                  </Typography>
+                </Box>
+              </Box>
+            )}
+          </Box>
+
+          <Box 
+            sx={{ 
+              p: 2, 
+              flexGrow: 1,
+              overflow: "auto",
+              display: "flex",
+              flexDirection: "column"
+            }}
+          >
+            {loading && messages.length === 0 ? (
+              <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+                <CircularProgress/>
+              </Box>
+            ) : error ? (
+              <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+                <Typography color="error">{error}</Typography>
+              </Box>
+            ) : (
+              messages.map((msg, index) => (
+                <Box
+                  key={index}
+                  alignSelf={Number(msg.sender_id) === Number(userId) ? "flex-end" : "flex-start"}
+                  sx={{ 
+                    maxWidth: "70%", 
+                    mb: 2,
+                    display: "flex",
+                    flexDirection: "column"
+                  }}
+                >
+                  {!msg.deleted ? (
+                    <>
+                      {renderMedia(msg.media_url)}
+                      <Paper 
+                        sx={{ 
+                          p: 2, 
+                          bgcolor: Number(msg.sender_id) === Number(userId) ? "#25D366" : "#f0f0f0",
+                          color: Number(msg.sender_id) === Number(userId) ? "white" : "inherit",
+                          borderRadius: 2,
+                        }}
+                      >
+                        <Typography variant="body1">
+                          {msg.message}
+                        </Typography>
+                      </Paper>
+                      <Typography 
+                        variant="caption" 
+                        color="text.secondary"
+                        alignSelf={Number(msg.sender_id) === Number(userId) ? "flex-end" : "flex-start"}
+                        sx={{ mt: 0.5 }}
+                      >
+                        {formatTimestamp(msg.timestamp)}
+                      </Typography>
+                    </>
+                  ) : (
+                    <Paper 
+                      sx={{ 
+                        p: 2, 
+                        bgcolor: "#f0f0f0",
+                        fontStyle: "italic",
+                        borderRadius: 2,
+                      }}
+                    >
+                      <Typography variant="body2" color="text.secondary">
+                        This message was deleted
+                      </Typography>
+                    </Paper>
+                  )}
+                </Box>
+              ))
+            )}
+            <div ref={messagesEndRef} />
+          </Box>
+
+          {mediaPreview && (
+            <Box sx={{ p: 2, borderTop: "1px solid #e0e0e0" }}>
+              <Box sx={{ position: "relative", display: "inline-block" }}>
+                <img 
+                  src={mediaPreview} 
+                  alt="Media preview" 
+                  style={{ 
+                    maxHeight: 100, 
+                    maxWidth: 200,
+                    borderRadius: 8
+                  }} 
+                />
+                <IconButton
+                  size="small"
+                  onClick={clearMediaPreview}
+                  sx={{
+                    position: "absolute",
+                    top: -10,
+                    right: -10,
+                    bgcolor: "rgba(0,0,0,0.6)",
+                    color: "white",
+                    '&:hover': {
+                      bgcolor: "rgba(0,0,0,0.8)"
+                    }
+                  }}
+                >
+                  ✕
+                </IconButton>
+              </Box>
+            </Box>
+          )}
+
+          <Box 
+            component="form" 
+            onSubmit={handleSendMessage}
+            sx={{ 
+              p: 2, 
+              borderTop: "1px solid #e0e0e0",
+              display: "flex",
+              alignItems: "center"
+            }}
+          >
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleMediaChange}
+              style={{ display: "none" }}
+              accept="image/*"
+            />
+            <IconButton 
+              onClick={() => fileInputRef.current.click()}
+              disabled={loading}
+            >
+              <AttachFileIcon />
+            </IconButton>
+            <TextField
+              fullWidth
+              placeholder="Type your message here..."
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              variant="outlined"
+              size="small"
+              sx={{ mx: 1 }}
+              disabled={loading}
+            />
+            <Button
+              variant="contained"
+              color="primary"
+              type="submit"
+              disabled={(!message.trim() && !mediaFile) || loading}
+              sx={{ 
+                borderRadius: 2,
+                bgcolor: "#25D366",
+                '&:hover': {
+                  bgcolor: "#128C7E"
+                }
+              }}
+            >
+              {loading ? <CircularProgress size={24} /> : <SendIcon />}
+            </Button>
+          </Box>
+        </Paper>
+      </Container>
+    </>
+  );
+};
+
+export default ListingChat;

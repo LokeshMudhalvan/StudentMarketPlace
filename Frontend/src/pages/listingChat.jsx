@@ -34,6 +34,7 @@ const ListingChat = () => {
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const socketRef = useRef(null);
+  const [tempMessageId, setTempMessageId] = useState(null);
 
   useEffect(() => {
     const fetchUserID = async () => { 
@@ -107,7 +108,25 @@ const ListingChat = () => {
            (normalizedData.sender_id === Number(otherUserId) && normalizedData.receiver_id === Number(userId)))
         ) {
           console.log("Adding message to chat:", normalizedData);
-          setMessages((prevMessages) => [...prevMessages, normalizedData]);
+          
+          // If we have a temp message and this is from the current user, replace the temp message
+          if (tempMessageId && normalizedData.sender_id === Number(userId)) {
+            setMessages(prevMessages => {
+              const msgIndex = prevMessages.findIndex(msg => msg.temp_id === tempMessageId);
+              if (msgIndex !== -1) {
+                // Replace the temp message with the real one
+                const updatedMessages = [...prevMessages];
+                updatedMessages[msgIndex] = normalizedData;
+                setTempMessageId(null);
+                return updatedMessages;
+              }
+              return [...prevMessages, normalizedData];
+            });
+          } else {
+            // Otherwise just add the new message
+            setMessages(prevMessages => [...prevMessages, normalizedData]);
+          }
+          
           scrollToBottom();
         } else {
           console.log("Message doesn't belong to this conversation");
@@ -121,7 +140,7 @@ const ListingChat = () => {
         }
       };
     }
-  }, [authenticated, authLoading, userId, token, listing_id, seller_id, buyer_id]);
+  }, [authenticated, authLoading, userId, token, listing_id, seller_id, buyer_id, tempMessageId]);
 
   useEffect(() => {
     const fetchListingInfo = async () => {
@@ -148,13 +167,7 @@ const ListingChat = () => {
 
     const fetchMessages = async () => {
       try {
-        setLoading(true);
-        console.log('Fetching messages with:');
-        console.log('- User ID:', userId);
-        console.log('- Seller ID:', seller_id);
-        console.log('- Buyer ID:', buyer_id);
-        console.log('- Other User ID:', Number(userId) === Number(seller_id) ? buyer_id : seller_id);
-        
+        setLoading(true);        
         const response = await axios.get(
           `http://localhost:5001/chat/get-messages/${listing_id}`,
           {
@@ -166,12 +179,10 @@ const ListingChat = () => {
             },
           }
         );
-        
         const normalizedMessages = response.data.messages.map(msg => ({
           ...msg,
           media_url: Array.isArray(msg.media_url) ? msg.media_url : []
         }));
-        
         setMessages(normalizedMessages);
       } catch (e) {
         if (e.response && e.response.status === 422) {
@@ -210,8 +221,25 @@ const ListingChat = () => {
       formData.append("receiver_id", Number(userId) === Number(seller_id) ? buyer_id : seller_id);
       formData.append("message", message);
 
+      const tempId = Date.now();
+      
       if (mediaFile) {
         formData.append("media", mediaFile);
+        
+        const tempMessage = {
+          message: message,
+          sender_id: Number(userId),
+          receiver_id: Number(userId) === Number(seller_id) ? Number(buyer_id) : Number(seller_id),
+          listing_id: Number(listing_id),
+          timestamp: new Date().toISOString(),
+          media_url: mediaPreview ? [mediaPreview] : [],
+          status: "sent",
+          deleted: false,
+          temp_id: tempId,
+        };
+        
+        setMessages(prevMessages => [...prevMessages, tempMessage]);
+        setTempMessageId(tempId);
       }
 
       await axios.post("http://localhost:5001/chat/send-message", formData, {
@@ -221,24 +249,32 @@ const ListingChat = () => {
         },
       });
 
-      const newMessage = {
-        message: message,
-        sender_id: Number(userId),
-        receiver_id: Number(userId) === Number(seller_id) ? Number(buyer_id) : Number(seller_id),
-        listing_id: Number(listing_id),
-        timestamp: new Date().toISOString(),
-        media_url: mediaPreview ? [mediaPreview] : [], 
-        status: "sent",
-        deleted: false,
-      };
+      if (!mediaFile) {
+        const newMessage = {
+          message: message,
+          sender_id: Number(userId),
+          receiver_id: Number(userId) === Number(seller_id) ? Number(buyer_id) : Number(seller_id),
+          listing_id: Number(listing_id),
+          timestamp: new Date().toISOString(),
+          media_url: [],
+          status: "sent",
+          deleted: false,
+        };
+        
+        setMessages((prevMessages) => [...prevMessages, newMessage]);
+      }
       
-      setMessages((prevMessages) => [...prevMessages, newMessage]);
       setMessage("");
       setMediaFile(null);
       setMediaPreview("");
     } catch (e) {
       console.error("Failed to send message:", e);
       setError("Failed to send message");
+      
+      if (tempMessageId) {
+        setMessages(prevMessages => prevMessages.filter(msg => !msg.temp_id || msg.temp_id !== tempMessageId));
+        setTempMessageId(null);
+      }
     } finally {
       setLoading(false);
     }
@@ -264,9 +300,9 @@ const ListingChat = () => {
 
   const renderMedia = (mediaUrls) => {
     if (!mediaUrls || mediaUrls.length === 0) return null;
-    
+
     return mediaUrls.map((url, idx) => {
-      const mediaUrl = url.startsWith('http') ? url : `http://localhost:5001${url}`;
+      const mediaUrl = url.startsWith('blob:') ? url : url.startsWith('http') ? url : `http://localhost:5001${url}`;
       
       return (
         <Box
@@ -377,18 +413,21 @@ const ListingChat = () => {
                   {!msg.deleted ? (
                     <>
                       {renderMedia(msg.media_url)}
-                      <Paper 
-                        sx={{ 
-                          p: 2, 
-                          bgcolor: Number(msg.sender_id) === Number(userId) ? "#25D366" : "#f0f0f0",
-                          color: Number(msg.sender_id) === Number(userId) ? "white" : "inherit",
-                          borderRadius: 2,
-                        }}
-                      >
-                        <Typography variant="body1">
-                          {msg.message}
-                        </Typography>
-                      </Paper>
+                      {msg.message && msg.message.trim() !== '' && (
+                        <Paper 
+                          sx={{ 
+                            p: 2, 
+                            bgcolor: Number(msg.sender_id) === Number(userId) ? "#25D366" : "#f0f0f0",
+                            color: Number(msg.sender_id) === Number(userId) ? "white" : "inherit",
+                            borderRadius: 2,
+                            opacity: msg.status === "sending" ? 0.7 : 1,
+                          }}
+                        >
+                          <Typography variant="body1">
+                            {msg.message}
+                          </Typography>
+                        </Paper>
+                      )}
                       <Typography 
                         variant="caption" 
                         color="text.secondary"

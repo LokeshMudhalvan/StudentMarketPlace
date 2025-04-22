@@ -20,7 +20,6 @@ os.makedirs(CHATS_DIR, exist_ok=True)
 def send_message():
     try:
         data = request.form.to_dict()
-
         sender_id = get_jwt_identity()
         listing_id = data["listing_id"]
         receiver_id = data["receiver_id"]
@@ -31,7 +30,7 @@ def send_message():
         if 'media' in request.files:
             uploaded_media = request.files.getlist('media')
             for media in uploaded_media:
-                if media and is_valid_filename(media):
+                if media and is_valid_filename(media.filename):
                     filename = secure_filename(media.filename)
                     media_path = os.path.join(CHATS_DIR, filename)
                     media.save(media_path)
@@ -125,13 +124,16 @@ def get_messages(listing_id):
         ).all()
 
         all_messages = []
-
+        
         for message in messages:
+            media = message.media_url 
+            formatted_media = [url.strip() for url in media.strip('{}').split(',')] 
+
             formatted_message = {
                 'message': message.message,
                 'timestamp': message.timestamp,
                 'status': message.status,
-                'media_url': message.media_url,
+                'media_url': formatted_media,
                 'sender_id': message.sender_id,
                 'receiver_id': message.receiver_id,
                 'deleted': message.deleted

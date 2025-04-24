@@ -13,7 +13,10 @@ def save_listing(listing_id):
 
         existing = SavedListings.query.filter_by(user_id=user_id, listing_id=listing_id).first()
         if existing:
-            return jsonify({"error": "Listing already exists"}), 400
+            db.session.delete(existing)
+            db.session.commit()
+
+            return jsonify({"message": "Listing unsaved successfully"}), 200
         
         saved_listing = SavedListings (
             listing_id = listing_id,
@@ -26,8 +29,8 @@ def save_listing(listing_id):
         return jsonify({"message": "Listing saved successfully"}), 200
     
     except Exception as e: 
-        print(f'An error occured while trying to save a listing: {e}')
-        return jsonify({"error":"An error occured while trying to save a listing"}), 500
+        print(f'An error occured while trying to save/unsave a listing: {e}')
+        return jsonify({"error":"An error occured while trying to save/unsave a listing"}), 500
     
 @saved_bp.route('/unsave-listing/<int:listing_id>', methods=["DELETE"])
 @jwt_required()
@@ -72,9 +75,9 @@ def show_saved_listings():
 
             if listing_info.images:
                 image_urls = []
-                number_of_images = len(listing.images)
+                number_of_images = len(listing_info.images)
                 for i in range(number_of_images):
-                    image_url = url_for('static', filename=f'listing-images/{listing.images[i].rsplit('/', 1)[1]}')
+                    image_url = url_for('static', filename=f'listing-images/{listing_info.images[i].rsplit('/', 1)[1]}')
                     image_urls.append(image_url) 
                     
                 listing_data['image_urls'] = image_urls

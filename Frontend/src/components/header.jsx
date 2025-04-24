@@ -87,6 +87,11 @@ const Header = () => {
         navigate(`/chat/${listing_id}/${seller_id}/${buyer_id}`);
     };
 
+    const handleSavedListing = () => {
+        handleClose();
+        navigate('/saved-listing');
+    }
+
     return (
         <>
             <AppBar position="static" className='header' elevation={1} sx={{ backgroundColor: '#559119' }}>
@@ -126,6 +131,7 @@ const Header = () => {
                                 <MenuItem onClick={handleClose}>Profile Settings</MenuItem>
                                 <MenuItem onClick={yourListing}>Your Listings</MenuItem>
                                 <MenuItem onClick={handleChatsClick}>Chats</MenuItem>
+                                <MenuItem onClick={handleSavedListing}>Saved Listings</MenuItem>
                                 <Divider />
                                 <MenuItem onClick={handleLogout}>Logout</MenuItem>
                             </Menu>

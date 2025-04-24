@@ -7,6 +7,7 @@ import YourListings from './pages/yourListings';
 import AddListing from './pages/addListing';
 import EditListing from './pages/editListing';
 import ListingChat from './pages/listingChat';
+import SavedListing from './pages/savedListing';
 import './App.scss'
 
 function App() {
@@ -41,6 +42,11 @@ function App() {
 
           <Route path="/chat/:listing_id/:seller_id/:buyer_id" element={
               <ListingChat/>
+            }
+          />
+
+          <Route path="/saved-listing" element={
+              <SavedListing/>
             }
           />
         </Routes>

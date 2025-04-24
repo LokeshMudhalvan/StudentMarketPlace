@@ -71,6 +71,11 @@ const ListingChat = () => {
   }, [authenticated, authLoading, navigate, token]);
 
   useEffect(() => {
+    if (!authenticated && !authLoading) {
+      navigate('/'); 
+      return;
+    }
+
     let socket = null;
     
     if (token && authenticated && !authLoading && userId) {
@@ -109,12 +114,10 @@ const ListingChat = () => {
         ) {
           console.log("Adding message to chat:", normalizedData);
           
-          // If we have a temp message and this is from the current user, replace the temp message
           if (tempMessageId && normalizedData.sender_id === Number(userId)) {
             setMessages(prevMessages => {
               const msgIndex = prevMessages.findIndex(msg => msg.temp_id === tempMessageId);
               if (msgIndex !== -1) {
-                // Replace the temp message with the real one
                 const updatedMessages = [...prevMessages];
                 updatedMessages[msgIndex] = normalizedData;
                 setTempMessageId(null);
@@ -123,7 +126,6 @@ const ListingChat = () => {
               return [...prevMessages, normalizedData];
             });
           } else {
-            // Otherwise just add the new message
             setMessages(prevMessages => [...prevMessages, normalizedData]);
           }
           
@@ -143,6 +145,11 @@ const ListingChat = () => {
   }, [authenticated, authLoading, userId, token, listing_id, seller_id, buyer_id, tempMessageId]);
 
   useEffect(() => {
+    if (!authenticated && !authLoading) {
+      navigate('/'); 
+      return;
+    }
+    
     const fetchListingInfo = async () => {
       try {
         setLoading(true);
@@ -152,7 +159,10 @@ const ListingChat = () => {
             },
           }
         );
-        setListingInfo(response.data);
+        if (response.data) {
+          setListingInfo(response.data);
+        }
+        
       } catch (e) {
         if (e.response && e.response.status === 422) {
             navigate('/');
@@ -179,11 +189,15 @@ const ListingChat = () => {
             },
           }
         );
-        const normalizedMessages = response.data.messages.map(msg => ({
-          ...msg,
-          media_url: Array.isArray(msg.media_url) ? msg.media_url : []
-        }));
-        setMessages(normalizedMessages);
+        
+        if (response.data) {
+          const normalizedMessages = response.data.messages.map(msg => ({
+            ...msg,
+            media_url: Array.isArray(msg.media_url) ? msg.media_url : []
+          }));
+          setMessages(normalizedMessages);
+        }
+
       } catch (e) {
         if (e.response && e.response.status === 422) {
             navigate('/');

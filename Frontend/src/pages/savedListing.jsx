@@ -1,6 +1,8 @@
-import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import Header from "../components/header";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import useAuth from "../hooks/auth";
 import {
     Card,
     CardContent,
@@ -14,20 +16,16 @@ import {
     Button,
     IconButton
 } from "@mui/material";
-import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
-import Header from "../components/header";
-import useAuth from "../hooks/auth";
 
-const Dashboard = () => {
+const SavedListing = () => {
+    const navigate = useNavigate();
     const token = localStorage.getItem('Token');
-    const [userId, setUserId] = useState();
-    const { authenticated, authLoading } = useAuth();
-    const [listings, setListings] = useState([]);
     const [error, setError] = useState('');
+    const { authenticated, authLoading } = useAuth();
     const [loading, setLoading] = useState(true);
     const [savedListings, setSavedListings] = useState([]);
-    const navigate = useNavigate();
+    const [userId, setUserId] = useState();
 
     useEffect(() => {
         const fetchUserID = async () => { 
@@ -37,7 +35,6 @@ const Dashboard = () => {
             }
     
             try {
-                setLoading(true);
                 const response = await axios.get(`http://localhost:5001/users/user-id`, {
                     headers: {
                       Authorization: `Bearer ${token}`,
@@ -46,7 +43,6 @@ const Dashboard = () => {
                 );
         
                 if (response.data) {
-                    console.log(response.data);
                     setUserId(response.data);
                 }
             } catch (e) {
@@ -56,53 +52,12 @@ const Dashboard = () => {
                     console.error('An error occured while fetching user id:', e);
                     setError(e.response?.data?.msg || 'An error occured while fetching user id');
                 }
-            } finally {
-                setLoading(false);
             }
         }
-      fetchUserID();
+        fetchUserID();
     }, []);
 
-    useEffect (() => {
-        if (!authenticated && !authLoading) {
-            navigate('/'); 
-            return;
-        }
-        setError('');
-        const getListings = async () => {
-
-            try {
-                setLoading(true);
-                const response = await axios.get('http://localhost:5001/listings/show-all', {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    }
-                });
-
-                if (response.data) {
-                    if (response.data.length < 10) {
-                        setListings(response.data);
-                    }
-                    else {
-                        setListings(response.data.slice(0,10));
-                    }
-                }
-
-            } catch (e) {
-                if (e.response && e.response.status === 422) {
-                    navigate('/');
-                } else {
-                    console.error('An error occured while loading the listings:', e);
-                    setError(e.response?.data?.msg || 'An error occured while loading the listings');
-                }
-            } finally {
-                setLoading(false);
-            }
-        };
-        getListings();
-    }, []);
-
-    useEffect (() => {
+    useEffect(() => {
         if (!authenticated && !authLoading) {
             navigate('/'); 
             return;
@@ -119,11 +74,7 @@ const Dashboard = () => {
                 });
 
                 if (response.data) {
-                    console.log('This is the given saved listing response data', response.data.saved_listings);
-                    const savedListingIds = response.data.saved_listings.map(listing => {
-                        return listing.listing_id;
-                    });
-                    setSavedListings(savedListingIds);
+                    setSavedListings(response.data.saved_listings);
                 }
             } catch (e) {
                 if (e.response && e.response.status === 422) {
@@ -135,51 +86,40 @@ const Dashboard = () => {
             } finally {
                 setLoading(false);
             }
-        }
-
+        };
+        
         getSavedListings();
-    }, []);
+    }, [authenticated, authLoading, navigate, token]);
 
-    const handleSaveListing = async (listing_id) => {
+    const handleUnsaveListing = async (listing_id) => {
         try {
             setLoading(true);
-            const response = await axios.post(`http://localhost:5001/saved/save-listing/${listing_id}`, {}, {
+            await axios.post(`http://localhost:5001/saved/save-listing/${listing_id}`, {}, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 }
             });
+
+            setSavedListings(savedListings.filter(listing => listing.listing_id !== listing_id));
             
-            if (response.data) {
-                const isNowSaved = !savedListings.includes(listing_id);
-                
-                if (isNowSaved) {
-                    setSavedListings([...savedListings, listing_id]);
-                } else {
-                    setSavedListings(savedListings.filter(id => id !== listing_id));
-                }
-            }
         } catch (e) {
             if (e.response && e.response.status === 422) {
                 navigate('/'); 
             } else {
-                console.error('An error occurred while saving/unsaving listings:', e);
-                setError(e.response?.data?.msg || 'An error occurred while saving/unsaving listings');
+                console.error('An error occurred while unsaving listing:', e);
+                setError(e.response?.data?.msg || 'An error occurred while unsaving listing');
             }
         } finally {
             setLoading(false);
         }
     };
 
-    const isListingSaved = (listing_id) => {
-        return savedListings.includes(listing_id);
-    };
-
     return (
         <>
-            <Header />
+            <Header/>
             <Container maxWidth="lg" sx={{ py: 5 }}>
                 <Typography variant="h4" fontWeight="bold" gutterBottom align="center">
-                    Listings
+                    Saved Listings
                 </Typography>
 
                 {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
@@ -187,11 +127,21 @@ const Dashboard = () => {
                     <Box display="flex" justifyContent="center" mt={5}>
                         <CircularProgress />
                     </Box>
-                ) : listings.length === 0 ? (
-                    <Typography color="text.secondary">No listings found.</Typography>
+                ) : savedListings.length === 0 ? (
+                    <Box textAlign="center" mt={4}>
+                        <Typography color="text.secondary">No saved listings found.</Typography>
+                        <Button 
+                            variant="contained" 
+                            color="primary" 
+                            sx={{ mt: 2 }}
+                            onClick={() => navigate('/dashboard')}
+                        >
+                            Browse Listings
+                        </Button>
+                    </Box>
                 ) : (
                     <Grid container spacing={4}>
-                        {listings.map((listing, index) => (
+                        {savedListings.map((listing, index) => (
                             <Grid item xs={12} sm={6} md={4} key={index}>
                                 <Card
                                     className="listing-card"
@@ -203,26 +153,22 @@ const Dashboard = () => {
                                         position: "relative"
                                     }}
                                 >
-                                    {listing.user_id !== userId && (
-                                        <IconButton 
-                                            sx={{ 
-                                                position: 'absolute', 
-                                                top: 8, 
-                                                right: 8, 
-                                                bgcolor: 'rgba(255, 255, 255, 0.7)',
-                                                '&:hover': {
-                                                    bgcolor: 'rgba(255, 255, 255, 0.9)',
-                                                }
-                                            }}
-                                            onClick={() => handleSaveListing(listing.listing_id)}
-                                        >
-                                            {isListingSaved(listing.listing_id) ? (
-                                                <BookmarkIcon color="primary" />
-                                            ) : (
-                                                <BookmarkBorderIcon color="primary" />
-                                            )}
-                                        </IconButton>
-                                    )}
+                                    <IconButton 
+                                        sx={{ 
+                                            position: 'absolute', 
+                                            top: 8, 
+                                            right: 8, 
+                                            bgcolor: 'rgba(255, 255, 255, 0.7)',
+                                            '&:hover': {
+                                                bgcolor: 'rgba(255, 255, 255, 0.9)',
+                                            },
+                                            zIndex: 10
+                                        }}
+                                        onClick={() => handleUnsaveListing(listing.listing_id)}
+                                    >
+                                        <BookmarkIcon color="primary" />
+                                    </IconButton>
+                                    
                                     {listing.image_urls?.[0] && (
                                         <CardMedia
                                             component="img"
@@ -264,6 +210,6 @@ const Dashboard = () => {
             </Container>
         </>
     );
-}
+};
 
-export default Dashboard;
+export default SavedListing;

@@ -8,6 +8,7 @@ import AddListing from './pages/addListing';
 import EditListing from './pages/editListing';
 import ListingChat from './pages/listingChat';
 import SavedListing from './pages/savedListing';
+import SearchResults from './pages/searchResults';
 import './App.scss'
 
 function App() {
@@ -49,6 +50,12 @@ function App() {
               <SavedListing/>
             }
           />
+
+          <Route path="/search-results" element={
+              <SearchResults/>
+            }
+          />
+          
         </Routes>
       </Router>
     </div>

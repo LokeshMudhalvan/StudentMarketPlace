@@ -12,13 +12,26 @@ import {
     Drawer,
     List,
     ListItem,
-    ListItemText
+    ListItemText,
+    TextField,
+    Select,
+    InputLabel,
+    FormControl,
+    MenuItem as SelectItem,
+    OutlinedInput,
+    Checkbox,
+    ListItemText as SelectListItemText,
+    Box
 } from '@mui/material';
 import Brightness2OutlinedIcon from '@mui/icons-material/Brightness2Outlined';
 import WbSunnyOutlinedIcon from '@mui/icons-material/WbSunnyOutlined';
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
+import SearchIcon from '@mui/icons-material/Search';
 import useAuth from '../hooks/auth';
 import { useNavigate } from "react-router-dom";
+
+const categoriesOptions = ['Furniture', 'Electronics', 'Books', 'Clothing', 'Miscellaneous'];
+const conditionOptions = ['New', 'Like New', 'Good', 'Fair', 'Poor'];
 
 const Header = () => {
     const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
@@ -29,6 +42,14 @@ const Header = () => {
 
     const [allChats, setAllChats] = useState([]);
     const [chatDrawerOpen, setChatDrawerOpen] = useState(false);
+    const [searchDrawerOpen, setSearchDrawerOpen] = useState(false);
+
+    const [itemName, setItemName] = useState('');
+    const [university, setUniversity] = useState('');
+    const [minPrice, setMinPrice] = useState('');
+    const [maxPrice, setMaxPrice] = useState('');
+    const [categories, setCategories] = useState([]);
+    const [condition, setCondition] = useState('');
 
     useEffect(() => {
         localStorage.setItem('theme', theme);
@@ -58,20 +79,15 @@ const Header = () => {
 
     const handleChatsClick = async () => {
         handleClose();
-
         const token = localStorage.getItem('Token');
         try {
             const response = await axios.get(`http://localhost:5001/chat/show-all`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
+                headers: { Authorization: `Bearer ${token}` },
             });
-
             if (response.data) {
                 setAllChats(response.data);
                 setChatDrawerOpen(true);
             }
-
         } catch (e) {
             console.error('Error fetching chats:', e);
         }
@@ -90,7 +106,27 @@ const Header = () => {
     const handleSavedListing = () => {
         handleClose();
         navigate('/saved-listing');
-    }
+    };
+
+    const openSearchDrawer = () => {
+        setSearchDrawerOpen(true);
+    };
+
+    const handleSearch = () => {
+        const params = new URLSearchParams();
+
+        if (itemName) params.append('item_name', itemName);
+        if (university) params.append('university', university);
+        if (minPrice) params.append('min_price', minPrice);
+        if (maxPrice) params.append('max_price', maxPrice);
+        if (condition) params.append('condition', condition);
+        if (categories.length > 0) {
+            categories.forEach(category => params.append('category', category));
+        }
+
+        setSearchDrawerOpen(false);
+        navigate(`/search-results?${params.toString()}`);
+    };
 
     return (
         <>
@@ -108,25 +144,25 @@ const Header = () => {
 
                     {authenticated && !authLoading && (
                         <>
+
+                            <IconButton onClick={openSearchDrawer} color="inherit" size="large">
+                                <SearchIcon />
+                            </IconButton>
+
                             <IconButton
                                 onClick={handleMenuClick}
                                 color="inherit"
                                 size="large"
-                            >
+                                >
                                 <AccountCircleOutlinedIcon />
                             </IconButton>
+
                             <Menu
                                 anchorEl={anchorEl}
                                 open={open}
                                 onClose={handleClose}
-                                anchorOrigin={{
-                                    vertical: 'bottom',
-                                    horizontal: 'right',
-                                }}
-                                transformOrigin={{
-                                    vertical: 'top',
-                                    horizontal: 'right',
-                                }}
+                                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                             >
                                 <MenuItem onClick={handleClose}>Profile Settings</MenuItem>
                                 <MenuItem onClick={yourListing}>Your Listings</MenuItem>
@@ -159,6 +195,93 @@ const Header = () => {
                         ))}
                     </List>
                 </div>
+            </Drawer>
+
+            <Drawer
+                anchor="top"
+                open={searchDrawerOpen}
+                onClose={() => setSearchDrawerOpen(false)}
+            >
+                <Box sx={{ p: 3, width: 'auto' }}>
+                    <Typography variant="h6" gutterBottom>Search Listings</Typography>
+                    <Box display="flex" flexDirection="column" gap={2}>
+                        <TextField
+                            label="Item Name"
+                            value={itemName}
+                            onChange={(e) => setItemName(e.target.value)}
+                            fullWidth
+                        />
+                        <TextField
+                            label="University"
+                            value={university}
+                            onChange={(e) => setUniversity(e.target.value)}
+                            fullWidth
+                        />
+                        <TextField
+                            label="Min Price"
+                            type="number"
+                            value={minPrice}
+                            onChange={(e) => setMinPrice(e.target.value)}
+                            fullWidth
+                        />
+                        <TextField
+                            label="Max Price"
+                            type="number"
+                            value={maxPrice}
+                            onChange={(e) => setMaxPrice(e.target.value)}
+                            fullWidth
+                        />
+
+                        <FormControl fullWidth>
+                            <InputLabel>Categories</InputLabel>
+                            <Select
+                                multiple
+                                value={categories}
+                                onChange={(e) => setCategories(e.target.value)}
+                                input={<OutlinedInput label="Categories" />}
+                                renderValue={(selected) => selected.join(', ')}
+                            >
+                                {categoriesOptions.map((category) => (
+                                    <SelectItem key={category} value={category}>
+                                        <Checkbox checked={categories.indexOf(category) > -1} />
+                                        <SelectListItemText primary={category} />
+                                    </SelectItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+
+                        <FormControl fullWidth>
+                            <InputLabel>Condition</InputLabel>
+                            <Select
+                                value={condition}
+                                onChange={(e) => setCondition(e.target.value)}
+                                input={<OutlinedInput label="Condition" />}
+                            >
+                                {conditionOptions.map((cond) => (
+                                    <SelectItem key={cond} value={cond}>
+                                        {cond}
+                                    </SelectItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={handleSearch}
+                            disabled={
+                                !itemName &&
+                                !university &&
+                                !minPrice &&
+                                !maxPrice &&
+                                categories.length === 0 &&
+                                !condition
+                            }
+                        >
+                            Search
+                        </Button>
+                    </Box>
+                </Box>
             </Drawer>
         </>
     );

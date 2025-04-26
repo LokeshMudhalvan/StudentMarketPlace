@@ -223,16 +223,22 @@ const AddListing = () => {
             </Select>
             </FormControl>
 
-            <TextField
-            fullWidth
-            label="Category"
-            name="category"
-            value={formData.category}
-            onChange={handleChange}
-            margin="normal"
-            required
-            />
-
+            <FormControl fullWidth margin="normal" required>
+            <InputLabel>Category</InputLabel>
+            <Select
+                name="category"
+                value={formData.category}
+                onChange={handleChange}
+                label="Category"
+            >
+                <MenuItem value="Furniture">Furniture</MenuItem>
+                <MenuItem value="Electronics">Electronics</MenuItem>
+                <MenuItem value="Books">Books</MenuItem>
+                <MenuItem value="Clothes">Clothes</MenuItem>
+                <MenuItem value="Miscellaneous">Miscellaneous</MenuItem>
+            </Select>
+            </FormControl>
+            
             <Box mt={3}>
             <Typography fontWeight="medium" gutterBottom>
                 Upload Images

@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, request, jsonify, url_for
 from app import db
 from app.models import Listings
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -47,7 +47,7 @@ def search_listing():
         listings_data = []
         for listing in results:
             if user_id != listing.user_id:
-                listings_data.append({
+                listing_info = {
                     "listing_id": listing.listing_id,
                     "user_id": listing.user_id,
                     "item_name": listing.item_name,
@@ -56,9 +56,18 @@ def search_listing():
                     "condition": listing.condition,
                     "category": listing.category,
                     "university": listing.university,
-                    "images": listing.images,
                     "created_at": listing.created_at,
-                })
+                }
+                
+                if listing.images:
+                    image_urls = []
+                    number_of_images = len(listing.images)
+                    for i in range(number_of_images):
+                        image_url = url_for('static', filename=f'listing-images/{listing.images[i].rsplit('/', 1)[1]}')
+                        image_urls.append(image_url) 
+            
+                    listing_info['image_urls'] = image_urls
+                listings_data.append(listing_info)
             else: 
                 pass
 

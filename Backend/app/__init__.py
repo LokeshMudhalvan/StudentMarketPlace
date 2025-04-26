@@ -25,6 +25,7 @@ def create_app():
     from .routes.chat_routes import chat_bp
     from .routes.saved_routes import saved_bp
     from .routes.notify_routes import notify_bp
+    from .routes.search_routes import search_bp
 
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(user_bp, url_prefix='/users')
@@ -33,5 +34,6 @@ def create_app():
     app.register_blueprint(chat_bp, url_prefix='/chat')
     app.register_blueprint(saved_bp, url_prefix='/saved')
     app.register_blueprint(notify_bp, url_prefix='/notifications')
+    app.register_blueprint(search_bp, url_prefix='/search')
 
     return app 

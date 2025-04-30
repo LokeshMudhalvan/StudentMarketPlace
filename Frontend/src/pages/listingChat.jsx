@@ -9,7 +9,9 @@ import {
   Button, 
   Paper, 
   CircularProgress,
-  IconButton
+  IconButton,
+  Snackbar, 
+  Alert 
 } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
@@ -35,6 +37,8 @@ const ListingChat = () => {
   const fileInputRef = useRef(null);
   const socketRef = useRef(null);
   const [tempMessageId, setTempMessageId] = useState(null);
+  const [notification, setNotification] = useState(null);
+  const [showNotification, setShowNotification] = useState(false);
 
   useEffect(() => {
     const fetchUserID = async () => { 
@@ -86,6 +90,8 @@ const ListingChat = () => {
 
       socket.on("connect", () => {
         console.log("Connected to socket server with user ID:", userId);
+        
+        socket.emit('join_notifications', { user_id: userId });
       });
 
       socket.on("connect_error", (error) => {
@@ -133,6 +139,12 @@ const ListingChat = () => {
         } else {
           console.log("Message doesn't belong to this conversation");
         }
+      });
+
+      socket.on("new_notification", (data) => {
+        console.log("Notification received:", data);
+        setNotification(data);
+        setShowNotification(true);
       });
 
       return () => {
@@ -222,6 +234,18 @@ const ListingChat = () => {
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const handleCloseNotification = () => {
+    setShowNotification(false);
+  };
+
+  const handleNotificationClick = () => {
+    console.log('notification', notification);
+    if (notification && notification.listing_id) {
+      navigate(`/chat/${notification.listing_id}/${notification.seller_id}/${notification.buyer_id}`);
+    }
+    setShowNotification(false);
   };
 
   const handleSendMessage = async (e) => {
@@ -554,6 +578,26 @@ const ListingChat = () => {
           </Box>
         </Paper>
       </Container>
+
+      <Snackbar
+        open={showNotification}
+        autoHideDuration={6000}
+        onClose={handleCloseNotification}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={handleCloseNotification} 
+          severity="info" 
+          sx={{ 
+            width: '100%',
+            cursor: 'pointer',
+            '&:hover': { opacity: 0.9 }
+          }}
+          onClick={handleNotificationClick}
+        >
+          {notification?.title}: {notification?.content}
+        </Alert>
+      </Snackbar>
     </>
   );
 };

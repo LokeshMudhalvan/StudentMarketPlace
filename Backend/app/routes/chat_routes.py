@@ -25,6 +25,22 @@ def send_message():
         receiver_id = data["receiver_id"]
         message = data["message"]
 
+        listing = db.session.query(Listings).filter(Listings.listing_id == listing_id).first()
+        
+        if not listing:
+            return jsonify({"error": "Listing not found"}), 404
+        
+        seller_id = listing.user_id
+
+        buyer_id = sender_id if sender_id != seller_id else receiver_id
+
+        sender = db.session.query(Users).filter(Users.user_id == sender_id).first()
+
+        if not sender:
+            return jsonify({"error": "Sender not found"}), 404
+
+        sender_name = sender.name 
+
         media_urls = []
 
         if 'media' in request.files:
@@ -58,6 +74,16 @@ def send_message():
             'deleted': False,
             'chat_id': new_message.chat_id 
         }, room=str(receiver_id))
+
+        socketio.emit('new_notification', {
+            'title': f'New Notification from {sender_name}',
+            'content': message,
+            'listing_id': int(listing_id),
+            'sender_id': int(sender_id),
+            'buyer_id': int(buyer_id),
+            'seller_id': int(seller_id),
+        }, room=f"notifications_{receiver_id}")
+
 
         return jsonify({"message": "Message sent successfully"}), 200
     
@@ -218,6 +244,7 @@ def handle_connect():
         join_room(str(user_id))
         print(f"User {user_id} connected and joined room {user_id}")
         return True
+    
     except Exception as e:
         print(f"Authentication failed: {e}")
         disconnect()
@@ -230,6 +257,7 @@ def handle_disconnect():
         if user_id:
             leave_room(str(user_id))
             print(f"User {user_id} disconnected")
+
     except Exception as e:
         print(f"Error during disconnect: {e}")
 
@@ -248,5 +276,17 @@ def handle_new_message(data):
         receiver_id = data.get('receiver_id')
         if receiver_id:
             socketio.emit('new_message', data, room=str(receiver_id))
+
     except Exception as e:
         print(f"Error handling new message: {e}")
+
+@socketio.on('join_notifications')
+def handle_join_notifications(data):
+    try:
+        user_id = data.get('user_id')
+        if user_id:
+            join_room(f"notifications_{user_id}")
+            print(f"User {user_id} joined notification room")
+    
+    except Exception as e:
+        print(f"Error joining notifications room: {e}")

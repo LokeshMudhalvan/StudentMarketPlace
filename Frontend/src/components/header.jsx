@@ -21,14 +21,15 @@ import {
     OutlinedInput,
     Checkbox,
     ListItemText as SelectListItemText,
-    Box
+    Box,
 } from '@mui/material';
 import Brightness2OutlinedIcon from '@mui/icons-material/Brightness2Outlined';
 import WbSunnyOutlinedIcon from '@mui/icons-material/WbSunnyOutlined';
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
 import SearchIcon from '@mui/icons-material/Search';
 import useAuth from '../hooks/auth';
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import NotificationCenter from './notificationCenter';
 
 const categoriesOptions = ['Furniture', 'Electronics', 'Books', 'Clothing', 'Miscellaneous'];
 const conditionOptions = ['New', 'Like New', 'Good', 'Fair', 'Poor'];
@@ -39,17 +40,17 @@ const Header = () => {
     const navigate = useNavigate();
     const [anchorEl, setAnchorEl] = useState(null);
     const open = Boolean(anchorEl);
-
+    const [userId, setUserId] = useState(null);
     const [allChats, setAllChats] = useState([]);
     const [chatDrawerOpen, setChatDrawerOpen] = useState(false);
     const [searchDrawerOpen, setSearchDrawerOpen] = useState(false);
-
     const [itemName, setItemName] = useState('');
     const [university, setUniversity] = useState('');
     const [minPrice, setMinPrice] = useState('');
     const [maxPrice, setMaxPrice] = useState('');
     const [categories, setCategories] = useState([]);
     const [condition, setCondition] = useState('');
+    const token = localStorage.getItem('Token');
 
     useEffect(() => {
         localStorage.setItem('theme', theme);
@@ -59,6 +60,28 @@ const Header = () => {
             document.body.classList.remove('dark');
         }
     }, [theme]);
+
+    useEffect(() => {
+        if (authenticated && token) {
+            const fetchUserId = async () => {
+                try {
+                    const response = await axios.get(`http://localhost:5001/users/user-id`, {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    });
+                    
+                    if (response.data) {
+                        setUserId(response.data);
+                    }
+                } catch (error) {
+                    console.error("Failed to fetch user ID:", error);
+                }
+            };
+            
+            fetchUserId();
+        }
+    }, [authenticated, token]);
 
     const handleChangeTheme = () => {
         setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
@@ -79,7 +102,6 @@ const Header = () => {
 
     const handleChatsClick = async () => {
         handleClose();
-        const token = localStorage.getItem('Token');
         try {
             const response = await axios.get(`http://localhost:5001/chat/show-all`, {
                 headers: { Authorization: `Bearer ${token}` },
@@ -148,6 +170,8 @@ const Header = () => {
                             <IconButton onClick={openSearchDrawer} color="inherit" size="large">
                                 <SearchIcon />
                             </IconButton>
+
+                            {userId && <NotificationCenter userId={userId} />}
 
                             <IconButton
                                 onClick={handleMenuClick}

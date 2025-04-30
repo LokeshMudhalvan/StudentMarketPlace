@@ -55,13 +55,10 @@ const SavedListing = () => {
             }
         }
         fetchUserID();
-    }, []);
+    }, [authenticated, authLoading, token, navigate]);
 
     useEffect(() => {
-        if (!authenticated && !authLoading) {
-            navigate('/'); 
-            return;
-        }
+
         setError('');
 
         const getSavedListings = async () => {

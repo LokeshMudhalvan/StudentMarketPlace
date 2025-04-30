@@ -62,7 +62,7 @@ const YourListings = () => {
 
         fetchYourListings();
 
-    }, [listings]);
+    }, [authenticated, authLoading, token, navigate,listings]);
 
     const handleDeleteListing = async (listing_id) => {
         try {

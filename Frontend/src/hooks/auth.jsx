@@ -29,7 +29,6 @@ const useAuth = () => {
             } finally {
                 setAuthLoading(false);
             }
-            
         }
         if (token) {
             verifyAuthentication();
@@ -38,10 +37,10 @@ const useAuth = () => {
         else {
             setAuthLoading(false);
         }
-    }, []);
-    
+    }, [token]);
 
     return { authenticated, authLoading };
+
 }
 
 export default useAuth;

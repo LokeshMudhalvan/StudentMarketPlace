@@ -157,11 +157,7 @@ const ListingChat = () => {
   }, [authenticated, authLoading, userId, token, listing_id, seller_id, buyer_id, tempMessageId]);
 
   useEffect(() => {
-    if (!authenticated && !authLoading) {
-      navigate('/'); 
-      return;
-    }
-    
+
     const fetchListingInfo = async () => {
       try {
         setLoading(true);

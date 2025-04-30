@@ -38,6 +38,8 @@ const Dashboard = () => {
     
             try {
                 setLoading(true);
+                console.log('authenticated', authenticated);
+                console.log('authLoading', authLoading);
                 const response = await axios.get(`http://localhost:5001/users/user-id`, {
                     headers: {
                       Authorization: `Bearer ${token}`,
@@ -61,13 +63,10 @@ const Dashboard = () => {
             }
         }
       fetchUserID();
-    }, []);
+    }, [authenticated, authLoading, token, navigate]);
 
     useEffect (() => {
-        if (!authenticated && !authLoading) {
-            navigate('/'); 
-            return;
-        }
+
         setError('');
         const getListings = async () => {
 
@@ -100,13 +99,10 @@ const Dashboard = () => {
             }
         };
         getListings();
-    }, []);
+    }, [authenticated, authLoading, token, navigate]);
 
     useEffect (() => {
-        if (!authenticated && !authLoading) {
-            navigate('/'); 
-            return;
-        }
+
         setError('');
 
         const getSavedListings = async () => {
@@ -138,7 +134,7 @@ const Dashboard = () => {
         }
 
         getSavedListings();
-    }, []);
+    }, [authenticated, authLoading, token, navigate]);
 
     const handleSaveListing = async (listing_id) => {
         try {

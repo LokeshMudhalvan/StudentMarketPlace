@@ -62,13 +62,10 @@ const SearchResults = () => {
             }
         }
       fetchUserID();
-    }, []);
+    }, [authenticated, authLoading, token, navigate]);
 
     useEffect (() => {
-        if (!authenticated && !authLoading) {
-            navigate('/'); 
-            return;
-        }
+
         setError('');
         const getSearchResults = async () => {
 
@@ -98,13 +95,10 @@ const SearchResults = () => {
             }
         };
         getSearchResults();
-    }, []);
+    }, [authenticated, authLoading, token, navigate]);
 
     useEffect (() => {
-        if (!authenticated && !authLoading) {
-            navigate('/'); 
-            return;
-        }
+
         setError('');
 
         const getSavedListings = async () => {
@@ -136,7 +130,7 @@ const SearchResults = () => {
         }
 
         getSavedListings();
-    }, []);
+    }, [authenticated, authLoading, token, navigate]);
 
     const handleSaveListing = async (listing_id) => {
         try {

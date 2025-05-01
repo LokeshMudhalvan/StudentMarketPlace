@@ -22,6 +22,7 @@ import {
     Checkbox,
     ListItemText as SelectListItemText,
     Box,
+    Avatar,
 } from '@mui/material';
 import Brightness2OutlinedIcon from '@mui/icons-material/Brightness2Outlined';
 import WbSunnyOutlinedIcon from '@mui/icons-material/WbSunnyOutlined';
@@ -41,6 +42,7 @@ const Header = () => {
     const [anchorEl, setAnchorEl] = useState(null);
     const open = Boolean(anchorEl);
     const [userId, setUserId] = useState(null);
+    const [profilePicUrl, setProfilePicUrl] = useState(null);
     const [allChats, setAllChats] = useState([]);
     const [chatDrawerOpen, setChatDrawerOpen] = useState(false);
     const [searchDrawerOpen, setSearchDrawerOpen] = useState(false);
@@ -63,23 +65,45 @@ const Header = () => {
 
     useEffect(() => {
         if (authenticated && token) {
-            const fetchUserId = async () => {
+            const fetchUserData = async () => {
                 try {
-                    const response = await axios.get(`http://localhost:5001/users/user-id`, {
+                    const userIdResponse = await axios.get(`http://localhost:5001/users/user-id`, {
                         headers: {
                             Authorization: `Bearer ${token}`,
                         },
                     });
                     
-                    if (response.data) {
-                        setUserId(response.data);
+                    if (userIdResponse.data) {
+                        setUserId(userIdResponse.data);
                     }
-                } catch (error) {
-                    console.error("Failed to fetch user ID:", error);
+
+                    try {
+                        const profilePicResponse = await axios.get(`http://localhost:5001/users/profile-picture`, {
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                            },
+                        });
+                        
+                        if (profilePicResponse.data && profilePicResponse.data.profile_picture_url) {
+                            const picUrl = profilePicResponse.data.profile_picture_url;
+                            setProfilePicUrl(picUrl.startsWith('http') ? picUrl : `http://localhost:5001${picUrl}`);
+                        }
+                    } catch (picError) {
+                        console.log("No profile picture found or error fetching it:", picError);
+                        setProfilePicUrl(null);
+                    }
+                    
+                } catch (e) {
+                    if (e.response && (e.response.status === 422 || e.response.data.msg === 'Token has expired')) {
+                        navigate('/');
+                    } else {
+                        console.error('An error occurred while fetching user profile picture:', e);
+                        setError(e.response?.data?.msg || 'An error occurred while fetching user profile picture');
+                    }
                 }
             };
             
-            fetchUserId();
+            fetchUserData();
         }
     }, [authenticated, token]);
 
@@ -111,7 +135,12 @@ const Header = () => {
                 setChatDrawerOpen(true);
             }
         } catch (e) {
-            console.error('Error fetching chats:', e);
+            if (e.response && (e.response.status === 422 || e.response.data.msg === 'Token has expired')) {
+                navigate('/');
+            } else {
+                console.error('An error occurred while fetching all chats:', e);
+                setError(e.response?.data?.msg || 'An error occurred while fetching all chats');
+            }
         }
     };
 
@@ -129,6 +158,11 @@ const Header = () => {
         handleClose();
         navigate('/saved-listing');
     };
+
+    const handleProfileSettings = () => {
+        handleClose();
+        navigate('/update-user');
+    }
 
     const openSearchDrawer = () => {
         setSearchDrawerOpen(true);
@@ -166,7 +200,6 @@ const Header = () => {
 
                     {authenticated && !authLoading && (
                         <>
-
                             <IconButton onClick={openSearchDrawer} color="inherit" size="large">
                                 <SearchIcon />
                             </IconButton>
@@ -177,8 +210,20 @@ const Header = () => {
                                 onClick={handleMenuClick}
                                 color="inherit"
                                 size="large"
-                                >
-                                <AccountCircleOutlinedIcon />
+                            >
+                                {profilePicUrl ? (
+                                    <Avatar 
+                                        src={profilePicUrl}
+                                        alt="Profile Picture" 
+                                        sx={{ 
+                                            width: 32, 
+                                            height: 32,
+                                            border: '2px solid white'
+                                        }}
+                                    />
+                                ) : (
+                                    <AccountCircleOutlinedIcon />
+                                )}
                             </IconButton>
 
                             <Menu
@@ -188,7 +233,7 @@ const Header = () => {
                                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                             >
-                                <MenuItem onClick={handleClose}>Profile Settings</MenuItem>
+                                <MenuItem onClick={handleProfileSettings}>Profile Settings</MenuItem>
                                 <MenuItem onClick={yourListing}>Your Listings</MenuItem>
                                 <MenuItem onClick={handleChatsClick}>Chats</MenuItem>
                                 <MenuItem onClick={handleSavedListing}>Saved Listings</MenuItem>

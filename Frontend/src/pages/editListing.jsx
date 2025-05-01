@@ -142,8 +142,12 @@ const EditListing = () => {
         }, 2000);
       }
     } catch (e) {
-      console.error('An error occurred while updating listing:', e);
-      setError(e.response?.data?.msg || "An error occurred while trying to update listing");
+      if (e.response && (e.response.status === 422 || e.response.data.msg === 'Token has expired')) {
+        navigate('/');
+      } else {
+          console.error('An error occurred while updating listings:', e);
+          setError(e.response?.data?.msg || 'An error occurred while updating listings');
+      }
     } finally {
       setLoading(false);
     }

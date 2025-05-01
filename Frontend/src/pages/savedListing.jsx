@@ -303,7 +303,7 @@ const SavedListing = () => {
                         ))}
                     </Grid>
                 )}
-                {totalListings > 10 && (
+                {totalListings > 12 && (
                     <Box display="flex" justifyContent="center" mt={3}>
                         <Pagination
                             count={Math.ceil(totalListings / 10)} 

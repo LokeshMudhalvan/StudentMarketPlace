@@ -110,8 +110,12 @@ const YourListings = () => {
             }
 
         } catch(e) {
-            console.error('An error occurred while trying to delete listing', e);
-            setError('An error occurred while trying to delete listing');
+            if (e.response && (e.response.status === 422 || e.response.data.msg === 'Token has expired')) {
+                navigate('/'); 
+            } else {
+                console.error('An error occurred while deleting listings:', e);
+                setError(e.response?.data?.msg || 'An error occurred while deleting listings');
+            }
         } finally {
             setLoading(false);
         }
@@ -274,7 +278,7 @@ const YourListings = () => {
                         ))}
                     </Grid>
                 )}
-                {totalListings > 10 && (
+                {totalListings > 12 && (
                     <Box display="flex" justifyContent="center" mt={3}>
                         <Pagination
                             count={Math.ceil(totalListings / 10)} 

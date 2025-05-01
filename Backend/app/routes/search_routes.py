@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, url_for
 from app import db
-from app.models import Listings
+from app.models import Listings, Users
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy import and_, or_
 
@@ -12,6 +12,10 @@ def search_listing():
     user_id = get_jwt_identity()
 
     try:
+        current_page = request.args.get('page', 1, type=int)
+        limit = 12  
+        offset = (current_page - 1) * limit
+
         min_price = request.args.get('min_price', type=float)
         max_price = request.args.get('max_price', type=float)
         university = request.args.get('university', type=str)
@@ -42,11 +46,17 @@ def search_listing():
         if categories:
             filters.append(or_(*[Listings.category.ilike(category) for category in categories]))
 
-        results = query.filter(and_(*filters)).order_by(Listings.created_at.desc()).all()
+        filtered_query = query.filter(and_(*filters))
+        
+        total_results = filtered_query.count()
+
+        results = filtered_query.order_by(Listings.created_at.desc()).offset(offset).limit(limit).all()
 
         listings_data = []
         for listing in results:
             if user_id != listing.user_id:
+                user = Users.query.get(listing.user_id)
+                
                 listing_info = {
                     "listing_id": listing.listing_id,
                     "user_id": listing.user_id,
@@ -57,6 +67,7 @@ def search_listing():
                     "category": listing.category,
                     "university": listing.university,
                     "created_at": listing.created_at,
+                    "user": user.name if user else "Unknown"
                 }
                 
                 if listing.images:
@@ -68,10 +79,11 @@ def search_listing():
             
                     listing_info['image_urls'] = image_urls
                 listings_data.append(listing_info)
-            else: 
-                pass
 
-        return jsonify({"results": listings_data}), 200
+        return jsonify({
+            "results": listings_data,
+            "total_results": total_results
+        }), 200
 
     except Exception as e:
         print(f'An error occurred while trying to search listing: {e}')

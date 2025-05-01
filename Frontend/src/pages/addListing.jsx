@@ -112,8 +112,12 @@ const AddListing = () => {
         setImages([]);
       }
     } catch (e) {
-      console.error('An error occurred while adding listing:', e);
-      setError(e.response?.data?.msg || "An error occurred while trying to add listing");
+      if (e.response && (e.response.status === 422 || e.response.data.msg === 'Token has expired')) {
+        navigate('/');
+      } else {
+          console.error('An error occurred while adding listings:', e);
+          setError(e.response?.data?.msg || 'An error occurred while adding listings');
+      }
     } finally {
       setLoading(false);
     }

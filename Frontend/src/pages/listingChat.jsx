@@ -302,12 +302,17 @@ const ListingChat = () => {
       setMediaFile(null);
       setMediaPreview("");
     } catch (e) {
-      console.error("Failed to send message:", e);
-      setError("Failed to send message");
       
       if (tempMessageId) {
         setMessages(prevMessages => prevMessages.filter(msg => !msg.temp_id || msg.temp_id !== tempMessageId));
         setTempMessageId(null);
+      }
+
+      if (e.response && (e.response.status === 422 || e.response.data.msg === 'Token has expired')) {
+        navigate('/'); 
+      } else {
+          console.error('An error occurred while sending the message:', e);
+          setError(e.response?.data?.msg || 'An error occurred while sending the message');
       }
     } finally {
       setLoading(false);

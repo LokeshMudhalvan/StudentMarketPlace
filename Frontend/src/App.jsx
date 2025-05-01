@@ -9,6 +9,7 @@ import EditListing from './pages/editListing';
 import ListingChat from './pages/listingChat';
 import SavedListing from './pages/savedListing';
 import SearchResults from './pages/searchResults';
+import UserSettings from './pages/userSettings';
 import './App.scss'
 
 function App() {
@@ -53,6 +54,11 @@ function App() {
 
           <Route path="/search-results" element={
               <SearchResults/>
+            }
+          />
+
+          <Route path="/update-user" element={
+              <UserSettings/>
             }
           />
           

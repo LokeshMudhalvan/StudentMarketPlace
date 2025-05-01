@@ -86,7 +86,7 @@ const EditListing = () => {
         }
 
       } catch (e) {
-        if (e.response && e.response.status === 422) {
+        if (e.response && (e.response.status === 422 || e.response.data.msg === 'Token has expired')) {
           navigate('/');
         } else {
           console.error('An error occurred while loading listing details:', e);
@@ -389,9 +389,9 @@ const EditListing = () => {
                 color="primary"
                 size="large"
                 sx={{ px: 5 }}
-                disabled={loading}
+                disabled={loading || success}
               >
-                {loading ? <CircularProgress size={24} color="inherit" /> : "Update Listing"}
+                {loading ? <CircularProgress size={24} color="inherit" /> : success ? "Updated Successfully": "Update Listing"}
               </Button>
             </Box>
           </form>

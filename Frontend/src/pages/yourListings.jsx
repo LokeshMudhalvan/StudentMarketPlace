@@ -13,13 +13,16 @@ import {
     Alert,
     Button, 
     Tooltip, 
-    IconButton
+    IconButton,
+    MobileStepper
   } from "@mui/material";
 import AddIcon from '@mui/icons-material/Add'; 
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import Header from "../components/header";
 import useAuth from "../hooks/auth";
+import NavigateNextIcon from '@mui/icons-material/NavigateNext';
+import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 
 const YourListings = () => {
     const { authenticated, authLoading } = useAuth();
@@ -28,6 +31,31 @@ const YourListings = () => {
     const [listings, setListings] = useState([]);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(true);
+    const [activeSteps, setActiveSteps] = useState({});
+
+    const handleNext = (listingId) => {
+        setActiveSteps(prev => {
+            const listing = listings.find(l => l.listing_id === listingId);
+            const maxSteps = listing.image_urls ? listing.image_urls.length - 1 : 0;
+            const currentStep = prev[listingId] || 0;
+            return {
+                ...prev,
+                [listingId]: currentStep >= maxSteps ? 0 : currentStep + 1
+            };
+        });
+    };
+
+    const handleBack = (listingId) => {
+        setActiveSteps(prev => {
+            const listing = listings.find(l => l.listing_id === listingId);
+            const maxSteps = listing.image_urls ? listing.image_urls.length - 1 : 0;
+            const currentStep = prev[listingId] || 0;
+            return {
+                ...prev,
+                [listingId]: currentStep <= 0 ? maxSteps : currentStep - 1
+            };
+        });
+    };
 
     useEffect(() => {
         setError('');
@@ -49,7 +77,7 @@ const YourListings = () => {
                 }
 
             } catch (e) {
-                if (e.response && e.response.status === 422) {
+                if (e.response && (e.response.status === 422 || e.response.data.msg === 'Token has expired')) {
                     navigate('/'); 
                 } else {
                     console.error('An error occurred while loading individual listings:', e);
@@ -125,14 +153,81 @@ const YourListings = () => {
                                         "&:hover": { transform: "scale(1.03)" },
                                     }}
                                 >
-                                    {listing.image_urls?.[0] && (
-                                        <CardMedia
-                                            component="img"
-                                            height="200"
-                                            image={`http://localhost:5001${listing.image_urls[0]}`}
-                                            alt={`${listing.item_name} Image`}
-                                        />
+                                    {listing.image_urls && listing.image_urls.length > 0 && (
+                                        <Box sx={{ position: 'relative' }}>
+                                            <CardMedia
+                                                component="img"
+                                                height="200"
+                                                image={`http://localhost:5001${listing.image_urls[activeSteps[listing.listing_id] || 0]}`}
+                                                alt={`${listing.item_name} Image`}
+                                            />
+                                            
+                                            {listing.image_urls.length > 1 && (
+                                                <>
+                                                    <IconButton
+                                                        sx={{
+                                                            position: 'absolute',
+                                                            top: '50%',
+                                                            left: 8,
+                                                            transform: 'translateY(-50%)',
+                                                            bgcolor: 'rgba(255, 255, 255, 0.7)',
+                                                            '&:hover': {
+                                                                bgcolor: 'rgba(255, 255, 255, 0.9)',
+                                                            },
+                                                        }}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleBack(listing.listing_id);
+                                                        }}
+                                                    >
+                                                        <NavigateBeforeIcon />
+                                                    </IconButton>
+                                                    
+                                                    <IconButton
+                                                        sx={{
+                                                            position: 'absolute',
+                                                            top: '50%',
+                                                            right: 8,
+                                                            transform: 'translateY(-50%)',
+                                                            bgcolor: 'rgba(255, 255, 255, 0.7)',
+                                                            '&:hover': {
+                                                                bgcolor: 'rgba(255, 255, 255, 0.9)',
+                                                            },
+                                                        }}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleNext(listing.listing_id);
+                                                        }}
+                                                    >
+                                                        <NavigateNextIcon />
+                                                    </IconButton>
+                                                    
+                                                    <MobileStepper
+                                                        steps={listing.image_urls.length}
+                                                        position="static"
+                                                        activeStep={activeSteps[listing.listing_id] || 0}
+                                                        sx={{
+                                                            position: 'absolute',
+                                                            bottom: 0,
+                                                            width: '100%',
+                                                            bgcolor: 'transparent',
+                                                            '& .MuiMobileStepper-dot': {
+                                                                bgcolor: 'rgba(255, 255, 255, 0.5)',
+                                                            },
+                                                            '& .MuiMobileStepper-dotActive': {
+                                                                bgcolor: 'primary.main',
+                                                            },
+                                                            justifyContent: 'center',
+                                                            padding: '8px 0'
+                                                        }}
+                                                        nextButton={null}
+                                                        backButton={null}
+                                                    />
+                                                </>
+                                            )}
+                                        </Box>
                                     )}
+
                                     <CardContent>
                                         <Box display="flex" justifyContent="space-between" alignItems="center">
                                             <Typography variant="h6" fontWeight="bold">

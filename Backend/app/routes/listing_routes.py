@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, url_for
 from app import db
-from app.models import Listings
+from app.models import Listings, Users, SavedListings, Chats
 from flask_jwt_extended import jwt_required, get_jwt_identity
 import os
 from werkzeug.utils import secure_filename
@@ -66,6 +66,8 @@ def show_listings():
         listing_display = []
 
         for listing in listings:
+            user = Users.query.get(listing.user_id)
+
             listing_info = {
                 'listing_id': listing.listing_id,
                 'item_name': listing.item_name,
@@ -75,7 +77,8 @@ def show_listings():
                 'condition': listing.condition,
                 'category': listing.category,
                 'university': listing.university,
-                'user_id': listing.user_id
+                'user_id': listing.user_id,
+                'user': user.name
             }
 
             if listing.images:
@@ -253,7 +256,7 @@ def delete_listing(listing_id):
 
     except Exception as e:
         print(f'An error occured while trying to delete listing: {e}')
-        return jsonify({"error":"An error occured while trying to delete listing"}), 500
+        return jsonify({"error":f"An error occured while trying to delete listing: {str(e)}"}), 500
 
 @listing_bp.route('/add-images/<int:listing_id>', methods=["PUT"])
 @jwt_required()

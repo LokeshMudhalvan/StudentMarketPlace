@@ -25,6 +25,9 @@ class Listings(db.Model):
 
     user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
 
+    chats = db.relationship("Chats", cascade="all, delete-orphan", backref="listing", passive_deletes=True)
+    saved_listings = db.relationship("SavedListings", cascade="all, delete-orphan", backref="listing", passive_deletes=True)
+
 class Chats(db.Model):
     chat_id = db.Column(db.Integer, primary_key=True)  
     message = db.Column(db.Text, nullable=False) 
@@ -35,9 +38,8 @@ class Chats(db.Model):
 
     sender_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)  
     receiver_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)  
-    listing_id = db.Column(db.Integer, db.ForeignKey('listings.listing_id'), nullable=False)
+    listing_id = db.Column(db.Integer, db.ForeignKey('listings.listing_id', ondelete='CASCADE'), nullable=False)
     
-    listing = db.relationship("Listings", backref="chats")
     sender = db.relationship("Users", foreign_keys=[sender_id])
     receiver = db.relationship("Users", foreign_keys=[receiver_id])
 
@@ -54,7 +56,7 @@ class SavedListings(db.Model):
     saved_at = db.Column(db.DateTime, default=datetime.utcnow) 
 
     user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)  
-    listing_id = db.Column(db.Integer, db.ForeignKey('listings.listing_id'), nullable=False)
+    listing_id = db.Column(db.Integer, db.ForeignKey('listings.listing_id', ondelete='CASCADE'), nullable=False)
 
 class Notifications(db.Model):
     notification_id = db.Column(db.Integer, primary_key=True)  

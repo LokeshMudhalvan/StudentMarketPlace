@@ -51,7 +51,7 @@ const SearchResults = () => {
                     setUserId(response.data);
                 }
             } catch (e) {
-                if (e.response && e.response.status === 422) {
+                if (e.response && (e.response.status === 422 || e.response.data.msg === 'Token has expired')) {
                     navigate('/');
                 } else {
                     console.error('An error occured while fetching user id:', e);
@@ -84,7 +84,7 @@ const SearchResults = () => {
                 }
 
             } catch (e) {
-                if (e.response && e.response.status === 422) {
+                if (e.response && (e.response.status === 422 || e.response.data.msg === 'Token has expired')) {
                     navigate('/');
                 } else {
                     console.error('An error occured while loading the searched listings:', e);
@@ -118,7 +118,7 @@ const SearchResults = () => {
                     setSavedListings(savedListingIds);
                 }
             } catch (e) {
-                if (e.response && e.response.status === 422) {
+                if (e.response && (e.response.status === 422 || e.response.data.msg === 'Token has expired')) {
                     navigate('/');
                 } else {
                     console.error('An error occured while loading saved listings:', e);
@@ -151,7 +151,7 @@ const SearchResults = () => {
                 }
             }
         } catch (e) {
-            if (e.response && e.response.status === 422) {
+            if (e.response && (e.response.status === 422 || e.response.data.msg === 'Token has expired')) {
                 navigate('/'); 
             } else {
                 console.error('An error occurred while saving/unsaving listings:', e);

@@ -12,10 +12,13 @@ import {
     CircularProgress,
     Alert,
     Button,
-    IconButton
+    IconButton,
+    MobileStepper
 } from "@mui/material";
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
+import NavigateNextIcon from '@mui/icons-material/NavigateNext';
+import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import Header from "../components/header";
 import useAuth from "../hooks/auth";
 
@@ -27,7 +30,32 @@ const Dashboard = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(true);
     const [savedListings, setSavedListings] = useState([]);
+    const [activeSteps, setActiveSteps] = useState({});
     const navigate = useNavigate();
+
+    const handleNext = (listingId) => {
+        setActiveSteps(prev => {
+            const listing = listings.find(l => l.listing_id === listingId);
+            const maxSteps = listing.image_urls ? listing.image_urls.length - 1 : 0;
+            const currentStep = prev[listingId] || 0;
+            return {
+                ...prev,
+                [listingId]: currentStep >= maxSteps ? 0 : currentStep + 1
+            };
+        });
+    };
+
+    const handleBack = (listingId) => {
+        setActiveSteps(prev => {
+            const listing = listings.find(l => l.listing_id === listingId);
+            const maxSteps = listing.image_urls ? listing.image_urls.length - 1 : 0;
+            const currentStep = prev[listingId] || 0;
+            return {
+                ...prev,
+                [listingId]: currentStep <= 0 ? maxSteps : currentStep - 1
+            };
+        });
+    };
 
     useEffect(() => {
         const fetchUserID = async () => { 
@@ -52,11 +80,11 @@ const Dashboard = () => {
                     setUserId(response.data);
                 }
             } catch (e) {
-                if (e.response && e.response.status === 422) {
+                if (e.response && (e.response.status === 422 || e.response.data.msg === 'Token has expired')) {
                     navigate('/');
                 } else {
-                    console.error('An error occured while fetching user id:', e);
-                    setError(e.response?.data?.msg || 'An error occured while fetching user id');
+                    console.error('An error occurred while fetching user id:', e);
+                    setError(e.response?.data?.msg || 'An error occurred while fetching user id');
                 }
             } finally {
                 setLoading(false);
@@ -66,10 +94,8 @@ const Dashboard = () => {
     }, [authenticated, authLoading, token, navigate]);
 
     useEffect (() => {
-
         setError('');
         const getListings = async () => {
-
             try {
                 setLoading(true);
                 const response = await axios.get('http://localhost:5001/listings/show-all', {
@@ -88,11 +114,11 @@ const Dashboard = () => {
                 }
 
             } catch (e) {
-                if (e.response && e.response.status === 422) {
+                if (e.response && (e.response.status === 422 || e.response.data.msg === 'Token has expired')) {
                     navigate('/');
                 } else {
-                    console.error('An error occured while loading the listings:', e);
-                    setError(e.response?.data?.msg || 'An error occured while loading the listings');
+                    console.error('An error occurred while loading the listings:', e);
+                    setError(e.response?.data?.msg || 'An error occurred while loading the listings');
                 }
             } finally {
                 setLoading(false);
@@ -102,7 +128,6 @@ const Dashboard = () => {
     }, [authenticated, authLoading, token, navigate]);
 
     useEffect (() => {
-
         setError('');
 
         const getSavedListings = async () => {
@@ -122,11 +147,11 @@ const Dashboard = () => {
                     setSavedListings(savedListingIds);
                 }
             } catch (e) {
-                if (e.response && e.response.status === 422) {
+                if (e.response && (e.response.status === 422 || e.response.data.msg === 'Token has expired')) {
                     navigate('/');
                 } else {
-                    console.error('An error occured while loading saved listings:', e);
-                    setError(e.response?.data?.msg || 'An error occured while loading saved listings');
+                    console.error('An error occurred while loading saved listings:', e);
+                    setError(e.response?.data?.msg || 'An error occurred while loading saved listings');
                 }
             } finally {
                 setLoading(false);
@@ -155,7 +180,7 @@ const Dashboard = () => {
                 }
             }
         } catch (e) {
-            if (e.response && e.response.status === 422) {
+            if (e.response && (e.response.status === 422 || e.response.data.msg === 'Token has expired')) {
                 navigate('/'); 
             } else {
                 console.error('An error occurred while saving/unsaving listings:', e);
@@ -208,7 +233,8 @@ const Dashboard = () => {
                                                 bgcolor: 'rgba(255, 255, 255, 0.7)',
                                                 '&:hover': {
                                                     bgcolor: 'rgba(255, 255, 255, 0.9)',
-                                                }
+                                                },
+                                                zIndex: 2
                                             }}
                                             onClick={() => handleSaveListing(listing.listing_id)}
                                         >
@@ -219,14 +245,82 @@ const Dashboard = () => {
                                             )}
                                         </IconButton>
                                     )}
-                                    {listing.image_urls?.[0] && (
-                                        <CardMedia
-                                            component="img"
-                                            height="200"
-                                            image={`http://localhost:5001${listing.image_urls[0]}`}
-                                            alt={`${listing.item_name} Image`}
-                                        />
+                                    
+                                    {listing.image_urls && listing.image_urls.length > 0 && (
+                                        <Box sx={{ position: 'relative' }}>
+                                            <CardMedia
+                                                component="img"
+                                                height="200"
+                                                image={`http://localhost:5001${listing.image_urls[activeSteps[listing.listing_id] || 0]}`}
+                                                alt={`${listing.item_name} Image`}
+                                            />
+                                            
+                                            {listing.image_urls.length > 1 && (
+                                                <>
+                                                    <IconButton
+                                                        sx={{
+                                                            position: 'absolute',
+                                                            top: '50%',
+                                                            left: 8,
+                                                            transform: 'translateY(-50%)',
+                                                            bgcolor: 'rgba(255, 255, 255, 0.7)',
+                                                            '&:hover': {
+                                                                bgcolor: 'rgba(255, 255, 255, 0.9)',
+                                                            },
+                                                        }}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleBack(listing.listing_id);
+                                                        }}
+                                                    >
+                                                        <NavigateBeforeIcon />
+                                                    </IconButton>
+                                                    
+                                                    <IconButton
+                                                        sx={{
+                                                            position: 'absolute',
+                                                            top: '50%',
+                                                            right: 8,
+                                                            transform: 'translateY(-50%)',
+                                                            bgcolor: 'rgba(255, 255, 255, 0.7)',
+                                                            '&:hover': {
+                                                                bgcolor: 'rgba(255, 255, 255, 0.9)',
+                                                            },
+                                                        }}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleNext(listing.listing_id);
+                                                        }}
+                                                    >
+                                                        <NavigateNextIcon />
+                                                    </IconButton>
+                                                    
+                                                    <MobileStepper
+                                                        steps={listing.image_urls.length}
+                                                        position="static"
+                                                        activeStep={activeSteps[listing.listing_id] || 0}
+                                                        sx={{
+                                                            position: 'absolute',
+                                                            bottom: 0,
+                                                            width: '100%',
+                                                            bgcolor: 'transparent',
+                                                            '& .MuiMobileStepper-dot': {
+                                                                bgcolor: 'rgba(255, 255, 255, 0.5)',
+                                                            },
+                                                            '& .MuiMobileStepper-dotActive': {
+                                                                bgcolor: 'primary.main',
+                                                            },
+                                                            justifyContent: 'center',
+                                                            padding: '8px 0'
+                                                        }}
+                                                        nextButton={null}
+                                                        backButton={null}
+                                                    />
+                                                </>
+                                            )}
+                                        </Box>
                                     )}
+                                    
                                     <CardContent>
                                         <Typography variant="h6" fontWeight="bold">
                                             {listing.item_name}

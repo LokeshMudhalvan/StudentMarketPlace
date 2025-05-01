@@ -61,7 +61,7 @@ const ListingChat = () => {
                 setUserId(response.data);
             }
         } catch (e) {
-            if (e.response && e.response.status === 422) {
+            if (e.response && (e.response.status === 422 || e.response.data.msg === 'Token has expired')) {
                 navigate('/');
             } else {
                 console.error('An error occurred while fetching user id:', e);
@@ -172,7 +172,7 @@ const ListingChat = () => {
         }
         
       } catch (e) {
-        if (e.response && e.response.status === 422) {
+        if (e.response && (e.response.status === 422 || e.response.data.msg === 'Token has expired')) {
             navigate('/');
         } else {
             console.error('An error occurred while loading the listings:', e);
@@ -207,7 +207,7 @@ const ListingChat = () => {
         }
 
       } catch (e) {
-        if (e.response && e.response.status === 422) {
+        if (e.response && (e.response.status === 422 || e.response.data.msg === 'Token has expired')) {
             navigate('/');
         } else {
             console.error('An error occurred while fetching messages:', e);

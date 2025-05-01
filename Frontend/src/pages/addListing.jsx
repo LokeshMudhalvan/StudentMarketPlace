@@ -57,7 +57,7 @@ const AddListing = () => {
         }
 
       } catch (e) {
-        if (e.response && e.response.status === 422) {
+        if (e.response && (e.response.status === 422 || e.response.data.msg === 'Token has expired')) {
           navigate('/');
         } else {
           console.error('An error occurred while fetching university name:', e);

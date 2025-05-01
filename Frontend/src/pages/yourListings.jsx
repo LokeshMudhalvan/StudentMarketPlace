@@ -14,7 +14,8 @@ import {
     Button, 
     Tooltip, 
     IconButton,
-    MobileStepper
+    MobileStepper, 
+    Pagination
   } from "@mui/material";
 import AddIcon from '@mui/icons-material/Add'; 
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -32,6 +33,8 @@ const YourListings = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(true);
     const [activeSteps, setActiveSteps] = useState({});
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalListings, setTotalListings] = useState(0);
 
     const handleNext = (listingId) => {
         setActiveSteps(prev => {
@@ -66,14 +69,15 @@ const YourListings = () => {
 
         const fetchYourListings = async () => {
             try {
-                const response = await axios.get('http://localhost:5001/listings/show-individual-listings', {
+                const response = await axios.get(`http://localhost:5001/listings/show-individual-listings/${currentPage}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     }
                 });
 
                 if (response.data) {
-                    setListings(response.data.length < 10 ? response.data : response.data.slice(0, 10));
+                    setListings(response.data.listings);  
+                    setTotalListings(response.data.total_listings);  
                 }
 
             } catch (e) {
@@ -90,7 +94,7 @@ const YourListings = () => {
 
         fetchYourListings();
 
-    }, [authenticated, authLoading, token, navigate,listings]);
+    }, [authenticated, authLoading, token, navigate, listings, currentPage]);
 
     const handleDeleteListing = async (listing_id) => {
         try {
@@ -269,6 +273,16 @@ const YourListings = () => {
                             </Grid>
                         ))}
                     </Grid>
+                )}
+                {totalListings > 10 && (
+                    <Box display="flex" justifyContent="center" mt={3}>
+                        <Pagination
+                            count={Math.ceil(totalListings / 10)} 
+                            page={currentPage}
+                            onChange={(e, page) => setCurrentPage(page)} 
+                            color="primary"
+                        />
+                    </Box>
                 )}
             </Container>
         </>

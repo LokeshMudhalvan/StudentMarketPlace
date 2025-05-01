@@ -51,12 +51,17 @@ def unsave_listing(listing_id):
         print(f'An error occured while trying to unsave a listing: {e}')
         return jsonify({"error":"An error occured while trying to unsave a listing"}), 500
     
-@saved_bp.route('/show-saved-listings', methods=["GET"])
+@saved_bp.route('/show-saved-listings/<int:current_page>', methods=["GET"])
 @jwt_required()
-def show_saved_listings():
+def show_saved_listings(current_page):
     try: 
         user_id = get_jwt_identity()
-        save_listings = SavedListings.query.filter_by(user_id=user_id).all()
+        total_listings = SavedListings.query.filter_by(user_id=user_id).count()
+        limit = 12
+        offset = (current_page - 1) * 12 
+
+        listing_query = SavedListings.query.filter_by(user_id=user_id).offset(offset).limit(limit)
+        save_listings = listing_query.all()
 
         saved_listings = []
         for listing in save_listings:
@@ -84,7 +89,10 @@ def show_saved_listings():
 
             saved_listings.append(listing_data)
 
-        return jsonify({"saved_listings": saved_listings}), 200
+        return jsonify({
+            "saved_listings": saved_listings,
+            "total_listings": total_listings
+            }), 200
 
     except Exception as e: 
         print(f'An error occured while trying to show all saved listing: {e}')

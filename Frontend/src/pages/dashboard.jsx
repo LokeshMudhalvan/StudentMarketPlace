@@ -13,7 +13,8 @@ import {
     Alert,
     Button,
     IconButton,
-    MobileStepper
+    MobileStepper, 
+    Pagination
 } from "@mui/material";
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
@@ -32,6 +33,8 @@ const Dashboard = () => {
     const [savedListings, setSavedListings] = useState([]);
     const [activeSteps, setActiveSteps] = useState({});
     const navigate = useNavigate();
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalListings, setTotalListings] = useState(0);
 
     const handleNext = (listingId) => {
         setActiveSteps(prev => {
@@ -98,19 +101,15 @@ const Dashboard = () => {
         const getListings = async () => {
             try {
                 setLoading(true);
-                const response = await axios.get('http://localhost:5001/listings/show-all', {
+                const response = await axios.get(`http://localhost:5001/listings/show-all/${currentPage}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     }
                 });
 
                 if (response.data) {
-                    if (response.data.length < 10) {
-                        setListings(response.data);
-                    }
-                    else {
-                        setListings(response.data.slice(0,10));
-                    }
+                    setListings(response.data.listings);  
+                    setTotalListings(response.data.total_listings);  
                 }
 
             } catch (e) {
@@ -125,7 +124,7 @@ const Dashboard = () => {
             }
         };
         getListings();
-    }, [authenticated, authLoading, token, navigate]);
+    }, [authenticated, authLoading, token, navigate, currentPage]);
 
     useEffect (() => {
         setError('');
@@ -133,7 +132,7 @@ const Dashboard = () => {
         const getSavedListings = async () => {
             try {
                 setLoading(true);
-                const response = await axios.get('http://localhost:5001/saved/show-saved-listings', {
+                const response = await axios.get(`http://localhost:5001/saved/show-saved-listings/${currentPage}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     }
@@ -159,7 +158,7 @@ const Dashboard = () => {
         }
 
         getSavedListings();
-    }, [authenticated, authLoading, token, navigate]);
+    }, [authenticated, authLoading, token, navigate, currentPage]);
 
     const handleSaveListing = async (listing_id) => {
         try {
@@ -350,6 +349,16 @@ const Dashboard = () => {
                             </Grid>
                         ))}
                     </Grid>
+                )}
+                {totalListings > 10 && (
+                    <Box display="flex" justifyContent="center" mt={3}>
+                        <Pagination
+                            count={Math.ceil(totalListings / 10)} 
+                            page={currentPage}
+                            onChange={(e, page) => setCurrentPage(page)} 
+                            color="primary"
+                        />
+                    </Box>
                 )}
             </Container>
         </>

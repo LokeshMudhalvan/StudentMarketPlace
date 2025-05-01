@@ -15,7 +15,8 @@ import {
     Alert,
     Button,
     IconButton,
-    MobileStepper
+    MobileStepper, 
+    Pagination
 } from "@mui/material";
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
@@ -30,6 +31,8 @@ const SavedListing = () => {
     const [savedListings, setSavedListings] = useState([]);
     const [userId, setUserId] = useState();
     const [activeSteps, setActiveSteps] = useState({});
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalListings, setTotalListings] = useState(0);
 
     const handleNext = (listingId) => {
         setActiveSteps(prev => {
@@ -92,7 +95,7 @@ const SavedListing = () => {
         const getSavedListings = async () => {
             try {
                 setLoading(true);
-                const response = await axios.get('http://localhost:5001/saved/show-saved-listings', {
+                const response = await axios.get(`http://localhost:5001/saved/show-saved-listings/${currentPage}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     }
@@ -100,6 +103,7 @@ const SavedListing = () => {
 
                 if (response.data) {
                     setSavedListings(response.data.saved_listings);
+                    setTotalListings(response.data.total_listings);
                 }
             } catch (e) {
                 if (e.response && (e.response.status === 422 || e.response.data.msg === 'Token has expired')) {
@@ -114,7 +118,7 @@ const SavedListing = () => {
         };
         
         getSavedListings();
-    }, [authenticated, authLoading, navigate, token]);
+    }, [authenticated, authLoading, navigate, token, currentPage]);
 
     const handleUnsaveListing = async (listing_id) => {
         try {
@@ -298,6 +302,16 @@ const SavedListing = () => {
                             </Grid>
                         ))}
                     </Grid>
+                )}
+                {totalListings > 10 && (
+                    <Box display="flex" justifyContent="center" mt={3}>
+                        <Pagination
+                            count={Math.ceil(totalListings / 10)} 
+                            page={currentPage}
+                            onChange={(e, page) => setCurrentPage(page)} 
+                            color="primary"
+                        />
+                    </Box>
                 )}
             </Container>
         </>

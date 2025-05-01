@@ -4,6 +4,7 @@ from app.models import Listings, Users, SavedListings, Chats
 from flask_jwt_extended import jwt_required, get_jwt_identity
 import os
 from werkzeug.utils import secure_filename
+import math
 
 listing_bp = Blueprint('listing', __name__)
 
@@ -58,11 +59,17 @@ def create_listing():
         print(f'An error occured while trying to register listing: {e}')
         return jsonify({"error":"An error occured while trying to register listing"}), 500
 
-@listing_bp.route('/show-all', methods=["GET"])
+@listing_bp.route('/show-all/<int:current_page>', methods=["GET"])
 @jwt_required()
-def show_listings():
+def show_listings(current_page):
+
     try:
-        listings = Listings.query.all()
+        limit = 12
+        offset = (current_page - 1) * 12 
+        total_listings = Listings.query.count()
+
+        listing_query = Listings.query.offset(offset).limit(limit)
+        listings = listing_query.all()
         listing_display = []
 
         for listing in listings:
@@ -91,18 +98,27 @@ def show_listings():
                 listing_info['image_urls'] = image_urls
             listing_display.append(listing_info)
         
-        return jsonify(listing_display), 200
+        return jsonify({
+            "listings": listing_display,
+            "total_listings": total_listings
+        }), 200
     
     except Exception as e:
         print(f'An error occured while trying to show listings:{e}')
         return jsonify({"error":"An error occured while trying to show listings"}), 500
     
-@listing_bp.route('/show-individual-listings', methods=["GET"])
+@listing_bp.route('/show-individual-listings/<int:current_page>', methods=["GET"])
 @jwt_required()
-def show_individual_listings():
+def show_individual_listings(current_page):
     try:
         user_id = get_jwt_identity()
-        listings = Listings.query.filter_by(user_id=user_id).all()
+        total_listings = Listings.query.filter_by(user_id=user_id).count()
+        limit = 12
+        offset = (current_page - 1) * 12
+
+        listing_query = Listings.query.filter_by(user_id=user_id).offset(offset).limit(limit)
+        listings = listing_query.all()
+
         listing_display = []
 
         for listing in listings:
@@ -128,7 +144,10 @@ def show_individual_listings():
                 listing_info['image_urls'] = image_urls
             listing_display.append(listing_info)
         
-        return jsonify(listing_display), 200
+        return jsonify({
+            "listings": listing_display,
+            "total_listings": total_listings
+        }), 200
     
     except Exception as e:
         print(f'An error occured while trying to show user listings:{e}')

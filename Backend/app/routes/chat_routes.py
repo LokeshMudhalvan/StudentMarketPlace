@@ -84,8 +84,10 @@ def send_message():
             'seller_id': int(seller_id),
         }, room=f"notifications_{receiver_id}")
 
-
-        return jsonify({"message": "Message sent successfully"}), 200
+        return jsonify({
+            "message": "Message sent successfully",
+            "chat_id": new_message.chat_id
+        }), 200
     
     except Exception as e:
         print(f'An error occurred while trying to send message: {e}')
@@ -100,14 +102,24 @@ def update_message_status():
         new_status = data['status'] 
 
         message = Chats.query.get_or_404(chat_id)
+        
+        current_user_id = get_jwt_identity()
+        if int(message.receiver_id) != int(current_user_id):
+            return jsonify({"error": "You can only update status for messages you receive"}), 403
+            
         message.status = new_status
         db.session.commit()
+
+        socketio.emit('message_status_update', {
+            'chat_id': chat_id,
+            'status': new_status
+        }, room=str(message.sender_id))
 
         return jsonify({"message": "Message status updated successfully"}), 200
     
     except Exception as e:
-        print(f'An error occured while trying to update message status: {e}')
-        return jsonify({"error":"An error occured while trying to update message status"}), 500
+        print(f'An error occurred while trying to update message status: {e}')
+        return jsonify({"error":"An error occurred while trying to update message status"}), 500
 
 @chat_bp.route('/delete-message/<int:message_id>', methods=['DELETE'])
 @jwt_required()
@@ -115,19 +127,22 @@ def delete_message(message_id):
     try:
         message = Chats.query.get_or_404(message_id)
 
-        user_id = get_jwt_identity()
-        if message.sender_id != user_id:
-            return jsonify({"error": "You cannot delete someone else's message"}), 403
+        current_user_id = get_jwt_identity()
+        if int(message.sender_id) != int(current_user_id):
+            return jsonify({"error": "You can only delete messages you've sent"}), 403
         
         message.deleted = True
-
         db.session.commit()
+
+        socketio.emit('message_deleted', {
+            'chat_id': message_id,
+        }, room=str(message.receiver_id))
 
         return jsonify({"message": "Message deleted successfully"}), 200
 
     except Exception as e:
-        print(f'An error occured while trying to delete message: {e}')
-        return jsonify({"error":"An error occured while trying to delete message"}), 500
+        print(f'An error occurred while trying to delete message: {e}')
+        return jsonify({"error":"An error occurred while trying to delete message"}), 500
     
 @chat_bp.route('/get-messages/<int:listing_id>', methods=['GET'])
 @jwt_required()
@@ -153,7 +168,10 @@ def get_messages(listing_id):
         
         for message in messages:
             media = message.media_url 
-            formatted_media = [url.strip() for url in media.strip('{}').split(',')] 
+            if media and media.strip('{}'):
+                formatted_media = [url.strip() for url in media.strip('{}').split(',') if url.strip()] 
+            else:
+                formatted_media = []
 
             formatted_message = {
                 'message': message.message,
@@ -162,15 +180,16 @@ def get_messages(listing_id):
                 'media_url': formatted_media,
                 'sender_id': message.sender_id,
                 'receiver_id': message.receiver_id,
-                'deleted': message.deleted
+                'deleted': message.deleted,
+                'chat_id': message.chat_id 
             }
 
             all_messages.append(formatted_message)
 
         return jsonify({"messages": all_messages}), 200
     except Exception as e:
-        print(f'An error occured while trying to fetch messages: {e}')
-        return jsonify({"error":"An error occured while trying to fetch messages"}), 500
+        print(f'An error occurred while trying to fetch messages: {e}')
+        return jsonify({"error":"An error occurred while trying to fetch messages"}), 500
     
 @chat_bp.route('/show-all', methods=["GET"])
 @jwt_required()
@@ -212,13 +231,24 @@ def get_all_chats():
             other_user = chat.receiver if chat.sender_id == user_id else chat.sender
             listing = chat.listing
 
+            unread_count = Chats.query.filter(
+                Chats.sender_id == other_user.user_id,
+                Chats.receiver_id == user_id,
+                Chats.status != 'read',
+                Chats.listing_id == listing.listing_id,
+                Chats.deleted == False
+            ).count()
+
             results.append({
                 "chat_id": chat.chat_id,
                 "listing_id": listing.listing_id,
                 "item_name": listing.item_name,
                 "seller_id": listing.user_id,
-                "buyer_id": other_user.user_id,
+                "buyer_id": user_id if listing.user_id != user_id else other_user.user_id,
                 "user_name": other_user.name,
+                "last_message": chat.message if not chat.deleted else "This message was deleted",
+                "unread_count": unread_count,
+                "timestamp": chat.timestamp.isoformat()
             })
 
         return jsonify(results), 200

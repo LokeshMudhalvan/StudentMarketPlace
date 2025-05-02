@@ -23,11 +23,13 @@ import {
     ListItemText as SelectListItemText,
     Box,
     Avatar,
+    Badge,
 } from '@mui/material';
 import Brightness2OutlinedIcon from '@mui/icons-material/Brightness2Outlined';
 import WbSunnyOutlinedIcon from '@mui/icons-material/WbSunnyOutlined';
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
 import SearchIcon from '@mui/icons-material/Search';
+import ChatIcon from '@mui/icons-material/Chat';
 import useAuth from '../hooks/auth';
 import { Link, useNavigate } from "react-router-dom";
 import NotificationCenter from './notificationCenter';
@@ -52,6 +54,7 @@ const Header = () => {
     const [maxPrice, setMaxPrice] = useState('');
     const [categories, setCategories] = useState([]);
     const [condition, setCondition] = useState('');
+    const [totalUnreadCount, setTotalUnreadCount] = useState(0);
     const token = localStorage.getItem('Token');
 
     useEffect(() => {
@@ -107,6 +110,31 @@ const Header = () => {
         }
     }, [authenticated, token]);
 
+    useEffect(() => {
+        if (authenticated && token && userId) {
+            const fetchUnreadCount = async () => {
+                try {
+                    const response = await axios.get(`http://localhost:5001/chat/show-all`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    });
+                    
+                    if (response.data) {
+                        const count = response.data.reduce((total, chat) => total + chat.unread_count, 0);
+                        setTotalUnreadCount(count);
+                    }
+                } catch (e) {
+                    console.error('Error fetching unread count:', e);
+                }
+            };
+            
+            fetchUnreadCount();
+            
+            const intervalId = setInterval(fetchUnreadCount, 30000);
+            
+            return () => clearInterval(intervalId);
+        }
+    }, [authenticated, token, userId]);
+
     const handleChangeTheme = () => {
         setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
     };
@@ -131,7 +159,10 @@ const Header = () => {
                 headers: { Authorization: `Bearer ${token}` },
             });
             if (response.data) {
-                setAllChats(response.data);
+                const sortedChats = response.data.sort((a, b) => 
+                    new Date(b.timestamp) - new Date(a.timestamp)
+                );
+                setAllChats(sortedChats);
                 setChatDrawerOpen(true);
             }
         } catch (e) {
@@ -184,6 +215,22 @@ const Header = () => {
         navigate(`/search-results?${params.toString()}`);
     };
 
+    const formatChatTime = (timestamp) => {
+        const date = new Date(timestamp);
+        const now = new Date();
+        const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+        
+        if (diffDays === 0) {
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        } else if (diffDays === 1) {
+            return 'Yesterday';
+        } else if (diffDays < 7) {
+            return date.toLocaleDateString([], { weekday: 'short' });
+        } else {
+            return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+        }
+    };
+
     return (
         <>
             <AppBar position="static" className='header' elevation={1} sx={{ backgroundColor: '#559119' }}>
@@ -202,6 +249,12 @@ const Header = () => {
                         <>
                             <IconButton onClick={openSearchDrawer} color="inherit" size="large">
                                 <SearchIcon />
+                            </IconButton>
+
+                            <IconButton onClick={handleChatsClick} color="inherit" size="large">
+                                <Badge badgeContent={totalUnreadCount} color="error">
+                                    <ChatIcon />
+                                </Badge>
                             </IconButton>
 
                             {userId && <NotificationCenter userId={userId} />}
@@ -235,7 +288,16 @@ const Header = () => {
                             >
                                 <MenuItem onClick={handleProfileSettings}>Profile Settings</MenuItem>
                                 <MenuItem onClick={yourListing}>Your Listings</MenuItem>
-                                <MenuItem onClick={handleChatsClick}>Chats</MenuItem>
+                                <MenuItem onClick={handleChatsClick}>
+                                    Chats
+                                    {totalUnreadCount > 0 && (
+                                        <Badge 
+                                            badgeContent={totalUnreadCount} 
+                                            color="error" 
+                                            sx={{ marginLeft: 1 }}
+                                        />
+                                    )}
+                                </MenuItem>
                                 <MenuItem onClick={handleSavedListing}>Saved Listings</MenuItem>
                                 <Divider />
                                 <MenuItem onClick={handleLogout}>Logout</MenuItem>
@@ -250,16 +312,88 @@ const Header = () => {
                 open={chatDrawerOpen}
                 onClose={() => setChatDrawerOpen(false)}
             >
-                <div style={{ width: 300 }}>
+                <div style={{ width: 350 }}>
                     <Typography variant="h6" sx={{ p: 2 }}>Your Chats</Typography>
                     <Divider />
                     <List>
                         {allChats.map((chat) => (
-                            <ListItem button key={chat.chat_id} onClick={() => handleChatSelect(chat.listing_id, chat.seller_id, chat.buyer_id)}>
-                                <ListItemText
-                                    primary={chat.item_name}
-                                    secondary={`With: ${chat.user_name}`}
-                                />
+                            <ListItem 
+                                button 
+                                key={chat.chat_id} 
+                                onClick={() => handleChatSelect(chat.listing_id, chat.seller_id, chat.buyer_id)}
+                                sx={{
+                                    backgroundColor: chat.unread_count > 0 ? 'rgba(85, 145, 25, 0.1)' : 'inherit',
+                                    '&:hover': {
+                                        backgroundColor: chat.unread_count > 0 ? 'rgba(85, 145, 25, 0.2)' : 'rgba(0, 0, 0, 0.04)',
+                                    }
+                                }}
+                            >
+                                <Box sx={{ display: 'flex', width: '100%', alignItems: 'center' }}>
+                                    <Box sx={{ flexGrow: 1 }}>
+                                        <ListItemText
+                                            primary={
+                                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                    <Typography
+                                                        variant="subtitle1"
+                                                        component="div"
+                                                        sx={{ 
+                                                            fontWeight: chat.unread_count > 0 ? 'bold' : 'normal',
+                                                            flexGrow: 1
+                                                        }}
+                                                    >
+                                                        {chat.item_name}
+                                                    </Typography>
+                                                    <Typography 
+                                                        variant="caption" 
+                                                        component="span"
+                                                        sx={{ color: 'text.secondary' }}
+                                                    >
+                                                        {formatChatTime(chat.timestamp)}
+                                                    </Typography>
+                                                </Box>
+                                            }
+                                            secondary={
+                                                <>
+                                                    <Typography
+                                                        variant="body2"
+                                                        component="div"
+                                                        sx={{ 
+                                                            fontWeight: chat.unread_count > 0 ? 'bold' : 'normal',
+                                                            color: chat.unread_count > 0 ? 'text.primary' : 'text.secondary',
+                                                            overflow: 'hidden',
+                                                            textOverflow: 'ellipsis',
+                                                            whiteSpace: 'nowrap',
+                                                            maxWidth: '220px'
+                                                        }}
+                                                    >
+                                                        {chat.last_message}
+                                                    </Typography>
+                                                    <Typography
+                                                        variant="caption"
+                                                        component="div"
+                                                        sx={{ color: 'text.secondary' }}
+                                                    >
+                                                        {chat.user_name}
+                                                    </Typography>
+                                                </>
+                                            }
+                                        />
+                                    </Box>
+                                    {chat.unread_count > 0 && (
+                                        <Badge
+                                            badgeContent={chat.unread_count}
+                                            color="error"
+                                            sx={{
+                                                '& .MuiBadge-badge': {
+                                                    fontSize: '0.7rem',
+                                                    height: '20px',
+                                                    minWidth: '20px',
+                                                    borderRadius: '10px',
+                                                }
+                                            }}
+                                        />
+                                    )}
+                                </Box>
                             </ListItem>
                         ))}
                     </List>

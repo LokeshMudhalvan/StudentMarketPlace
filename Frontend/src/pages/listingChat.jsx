@@ -11,11 +11,16 @@ import {
   CircularProgress,
   IconButton,
   Snackbar, 
-  Alert 
+  Alert,
+  Menu,
+  MenuItem
 } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import DoneIcon from "@mui/icons-material/Done";
+import DoneAllIcon from "@mui/icons-material/DoneAll";
 import Header from "../components/header";
 import useAuth from "../hooks/auth";
 import io from "socket.io-client";
@@ -39,6 +44,8 @@ const ListingChat = () => {
   const [tempMessageId, setTempMessageId] = useState(null);
   const [notification, setNotification] = useState(null);
   const [showNotification, setShowNotification] = useState(false);
+  const [messageMenuAnchorEl, setMessageMenuAnchorEl] = useState(null);
+  const [selectedMessage, setSelectedMessage] = useState(null);
 
   useEffect(() => {
     const fetchUserID = async () => { 
@@ -135,10 +142,38 @@ const ListingChat = () => {
             setMessages(prevMessages => [...prevMessages, normalizedData]);
           }
           
+          if (normalizedData.sender_id === Number(otherUserId)) {
+            updateMessageStatus(normalizedData.chat_id, 'read');
+          }
+          
           scrollToBottom();
         } else {
           console.log("Message doesn't belong to this conversation");
         }
+      });
+
+      socket.on("message_status_update", (data) => {
+        console.log("Message status update received:", data);
+        setMessages(prevMessages => {
+          return prevMessages.map(msg => {
+            if (msg.chat_id === data.chat_id) {
+              return { ...msg, status: data.status };
+            }
+            return msg;
+          });
+        });
+      });
+
+      socket.on("message_deleted", (data) => {
+        console.log("Message deletion update received:", data);
+        setMessages(prevMessages => {
+          return prevMessages.map(msg => {
+            if (msg.chat_id === data.chat_id) {
+              return { ...msg, deleted: true };
+            }
+            return msg;
+          });
+        });
       });
 
       socket.on("new_notification", (data) => {
@@ -157,7 +192,6 @@ const ListingChat = () => {
   }, [authenticated, authLoading, userId, token, listing_id, seller_id, buyer_id, tempMessageId]);
 
   useEffect(() => {
-
     const fetchListingInfo = async () => {
       try {
         setLoading(true);
@@ -201,9 +235,17 @@ const ListingChat = () => {
         if (response.data) {
           const normalizedMessages = response.data.messages.map(msg => ({
             ...msg,
-            media_url: Array.isArray(msg.media_url) ? msg.media_url : []
+            media_url: Array.isArray(msg.media_url) ? msg.media_url : [],
+            chat_id: msg.chat_id
           }));
           setMessages(normalizedMessages);
+          
+          const otherUserId = Number(userId) === Number(seller_id) ? Number(buyer_id) : Number(seller_id);
+          normalizedMessages.forEach(msg => {
+            if (msg.sender_id === otherUserId && msg.status !== 'read') {
+              updateMessageStatus(msg.chat_id, 'read');
+            }
+          });
         }
 
       } catch (e) {
@@ -244,6 +286,36 @@ const ListingChat = () => {
     setShowNotification(false);
   };
 
+  const updateMessageStatus = async (chatId, status) => {
+    try {
+      const response = await axios.put(
+        'http://localhost:5001/chat/update-message-status',
+        {
+          chat_id: chatId,
+          status: status
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          }
+        }
+      );
+      
+      console.log('Status update response:', response.data);
+      
+      setMessages(prevMessages => {
+        return prevMessages.map(msg => {
+          if (msg.chat_id === chatId) {
+            return { ...msg, status: status };
+          }
+          return msg;
+        });
+      });
+    } catch (e) {
+      console.error('Error updating message status:', e);
+    }
+  };
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!message.trim() && !mediaFile) return;
@@ -276,7 +348,7 @@ const ListingChat = () => {
         setTempMessageId(tempId);
       }
 
-      await axios.post("http://localhost:5001/chat/send-message", formData, {
+      const response = await axios.post("http://localhost:5001/chat/send-message", formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
@@ -293,6 +365,7 @@ const ListingChat = () => {
           media_url: [],
           status: "sent",
           deleted: false,
+          chat_id: response.data.chat_id,
         };
         
         setMessages((prevMessages) => [...prevMessages, newMessage]);
@@ -337,6 +410,52 @@ const ListingChat = () => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  const handleMessageMenuOpen = (event, message) => {
+    if (message.sender_id === Number(userId) && !message.deleted) {
+      setMessageMenuAnchorEl(event.currentTarget);
+      setSelectedMessage(message);
+    }
+  };
+
+  const handleMessageMenuClose = () => {
+    setMessageMenuAnchorEl(null);
+    setSelectedMessage(null);
+  };
+
+  const handleDeleteMessage = async () => {
+    if (!selectedMessage || !selectedMessage.chat_id) return;
+    
+    try {
+      setLoading(true);
+      const response = await axios.delete(
+        `http://localhost:5001/chat/delete-message/${selectedMessage.chat_id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          }
+        }
+      );
+      
+      console.log('Delete response:', response.data);
+      
+      setMessages(prevMessages => {
+        return prevMessages.map(msg => {
+          if (msg.chat_id === selectedMessage.chat_id) {
+            return { ...msg, deleted: true };
+          }
+          return msg;
+        });
+      });
+      
+      handleMessageMenuClose();
+    } catch (e) {
+      console.error('Error deleting message:', e);
+      setError('Failed to delete message');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const renderMedia = (mediaUrls) => {
     if (!mediaUrls || mediaUrls.length === 0) return null;
 
@@ -361,6 +480,20 @@ const ListingChat = () => {
         />
       );
     });
+  };
+
+  const renderMessageStatus = (msg) => {
+    if (msg.sender_id !== Number(userId) || msg.deleted) return null;
+    
+    return (
+      <Box display="inline" ml={0.5} sx={{ verticalAlign: 'middle' }}>
+        {msg.status === 'read' ? (
+          <DoneAllIcon sx={{ fontSize: 16, color: '#4FC3F7' }} />
+        ) : (
+          <DoneIcon sx={{ fontSize: 16, color: 'grey.500' }} />
+        )}
+      </Box>
+    );
   };
 
   return (
@@ -446,7 +579,8 @@ const ListingChat = () => {
                     maxWidth: "70%", 
                     mb: 2,
                     display: "flex",
-                    flexDirection: "column"
+                    flexDirection: "column",
+                    position: "relative"
                   }}
                 >
                   {!msg.deleted ? (
@@ -460,21 +594,26 @@ const ListingChat = () => {
                             color: Number(msg.sender_id) === Number(userId) ? "white" : "inherit",
                             borderRadius: 2,
                             opacity: msg.status === "sending" ? 0.7 : 1,
+                            cursor: Number(msg.sender_id) === Number(userId) ? "pointer" : "default"
                           }}
+                          onClick={(e) => handleMessageMenuOpen(e, msg)}
                         >
                           <Typography variant="body1">
                             {msg.message}
                           </Typography>
                         </Paper>
                       )}
-                      <Typography 
-                        variant="caption" 
-                        color="text.secondary"
-                        alignSelf={Number(msg.sender_id) === Number(userId) ? "flex-end" : "flex-start"}
+                      <Box 
+                        display="flex" 
+                        alignItems="center" 
+                        justifyContent={Number(msg.sender_id) === Number(userId) ? "flex-end" : "flex-start"}
                         sx={{ mt: 0.5 }}
                       >
-                        {formatTimestamp(msg.timestamp)}
-                      </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {formatTimestamp(msg.timestamp)}
+                        </Typography>
+                        {renderMessageStatus(msg)}
+                      </Box>
                     </>
                   ) : (
                     <Paper 
@@ -487,6 +626,13 @@ const ListingChat = () => {
                     >
                       <Typography variant="body2" color="text.secondary">
                         This message was deleted
+                      </Typography>
+                      <Typography 
+                        variant="caption" 
+                        color="text.secondary"
+                        sx={{ display: "block", mt: 0.5 }}
+                      >
+                        {formatTimestamp(msg.timestamp)}
                       </Typography>
                     </Paper>
                   )}
@@ -579,6 +725,14 @@ const ListingChat = () => {
           </Box>
         </Paper>
       </Container>
+
+      <Menu
+        anchorEl={messageMenuAnchorEl}
+        open={Boolean(messageMenuAnchorEl)}
+        onClose={handleMessageMenuClose}
+      >
+        <MenuItem onClick={handleDeleteMessage}>Delete Message</MenuItem>
+      </Menu>
 
       <Snackbar
         open={showNotification}

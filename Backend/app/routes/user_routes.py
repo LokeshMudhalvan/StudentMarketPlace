@@ -87,7 +87,7 @@ def get_profile_picture():
             profile_pic_url = url_for('static', filename=f'profile-pics/{filename}')
             return jsonify({"profile_picture_url": profile_pic_url}), 200
         else:
-            return jsonify({"error": "No profile picture found"}), 404
+            return jsonify({"error": "No profile picture found"})
 
     except Exception as e:
         print(f"Error while getting profile picture: {e}")

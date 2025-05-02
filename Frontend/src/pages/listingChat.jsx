@@ -108,7 +108,7 @@ const ListingChat = () => {
 
       socket.on("new_message", (data) => {
         console.log("Raw socket message received:", data);
-
+      
         const otherUserId = Number(userId) === Number(seller_id) ? Number(buyer_id) : Number(seller_id);
         const numListingId = Number(listing_id);
         
@@ -117,7 +117,8 @@ const ListingChat = () => {
           sender_id: Number(data.sender_id),
           receiver_id: Number(data.receiver_id),
           listing_id: Number(data.listing_id),
-          media_url: Array.isArray(data.media_url) ? data.media_url : []
+          media_url: Array.isArray(data.media_url) ? data.media_url : [],
+          timestamp: data.timestamp || new Date().toISOString()
         };
         
         if (
@@ -319,15 +320,16 @@ const ListingChat = () => {
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!message.trim() && !mediaFile) return;
-
+  
     try {
       setLoading(true);
       const formData = new FormData();
       formData.append("listing_id", listing_id);
       formData.append("receiver_id", Number(userId) === Number(seller_id) ? buyer_id : seller_id);
       formData.append("message", message);
-
+  
       const tempId = Date.now();
+      const currentTimeIso = new Date().toISOString();
       
       if (mediaFile) {
         formData.append("media", mediaFile);
@@ -337,7 +339,7 @@ const ListingChat = () => {
           sender_id: Number(userId),
           receiver_id: Number(userId) === Number(seller_id) ? Number(buyer_id) : Number(seller_id),
           listing_id: Number(listing_id),
-          timestamp: new Date().toISOString(),
+          timestamp: currentTimeIso,
           media_url: mediaPreview ? [mediaPreview] : [],
           status: "sent",
           deleted: false,
@@ -347,21 +349,21 @@ const ListingChat = () => {
         setMessages(prevMessages => [...prevMessages, tempMessage]);
         setTempMessageId(tempId);
       }
-
+  
       const response = await axios.post("http://localhost:5001/chat/send-message", formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
         },
       });
-
+  
       if (!mediaFile) {
         const newMessage = {
           message: message,
           sender_id: Number(userId),
           receiver_id: Number(userId) === Number(seller_id) ? Number(buyer_id) : Number(seller_id),
           listing_id: Number(listing_id),
-          timestamp: new Date().toISOString(),
+          timestamp: currentTimeIso,
           media_url: [],
           status: "sent",
           deleted: false,
@@ -375,12 +377,11 @@ const ListingChat = () => {
       setMediaFile(null);
       setMediaPreview("");
     } catch (e) {
-      
       if (tempMessageId) {
         setMessages(prevMessages => prevMessages.filter(msg => !msg.temp_id || msg.temp_id !== tempMessageId));
         setTempMessageId(null);
       }
-
+  
       if (e.response && (e.response.status === 422 || e.response.data.msg === 'Token has expired')) {
         navigate('/'); 
       } else {
@@ -406,8 +407,20 @@ const ListingChat = () => {
   };
 
   const formatTimestamp = (timestamp) => {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (!timestamp) {
+      return "Just now";
+    }
+    
+    try {
+      const date = new Date(timestamp);
+      if (isNaN(date.getTime())) {
+        return "Just now";
+      }
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+      console.error("Invalid timestamp format:", timestamp, e);
+      return "Just now";
+    }
   };
 
   const handleMessageMenuOpen = (event, message) => {
@@ -529,7 +542,7 @@ const ListingChat = () => {
             
             {listingInfo && (
               <Box display="flex" alignItems="center">
-                <Box 
+                {listingInfo.image_urls && <Box 
                   component="img"
                   src={listingInfo.image_urls ? `http://localhost:5001${listingInfo.image_urls[0]}` : "/placeholder.jpg"}
                   alt={listingInfo.item_name}
@@ -540,7 +553,7 @@ const ListingChat = () => {
                     objectFit: "cover",
                     mr: 2
                   }}
-                />
+                />}
                 <Box>
                   <Typography variant="h6" fontWeight="bold">
                     {listingInfo.item_name}

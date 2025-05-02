@@ -101,7 +101,6 @@ const SearchResults = () => {
             try {
                 setLoading(true);
                 const queryParams = new URLSearchParams(location.search);
-                // Add the page parameter to the query
                 queryParams.set('page', currentPage.toString());
                 const response = await axios.get(`http://localhost:5001/search/?${queryParams.toString()}`, { 
                     headers: {
@@ -135,7 +134,7 @@ const SearchResults = () => {
         const getSavedListings = async () => {
             try {
                 setLoading(true);
-                const response = await axios.get(`http://localhost:5001/saved/show-saved-listings/${currentPage}`, {
+                const response = await axios.get(`http://localhost:5001/saved/show-saved-listings`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     }

@@ -132,7 +132,7 @@ const Dashboard = () => {
         const getSavedListings = async () => {
             try {
                 setLoading(true);
-                const response = await axios.get(`http://localhost:5001/saved/show-saved-listings/${currentPage}`, {
+                const response = await axios.get(`http://localhost:5001/saved/show-saved-listings`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     }
@@ -158,7 +158,7 @@ const Dashboard = () => {
         }
 
         getSavedListings();
-    }, [authenticated, authLoading, token, navigate, currentPage]);
+    }, [authenticated, authLoading, token, navigate]);
 
     const handleSaveListing = async (listing_id) => {
         try {

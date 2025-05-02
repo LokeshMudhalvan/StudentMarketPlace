@@ -122,6 +122,8 @@ def show_individual_listings(current_page):
         listing_display = []
 
         for listing in listings:
+            user = Users.query.get(listing.user_id)
+
             listing_info = {
                 'listing_id': listing.listing_id,
                 'item_name': listing.item_name,
@@ -131,7 +133,7 @@ def show_individual_listings(current_page):
                 'condition': listing.condition,
                 'category': listing.category,
                 'university': listing.university,
-                'user_id': listing.user_id
+                'user': user.name
             }
 
             if listing.images:

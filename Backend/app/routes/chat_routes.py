@@ -69,7 +69,6 @@ def send_message():
             'receiver_id': int(receiver_id),
             'listing_id': int(listing_id),
             'media_url': media_urls, 
-            'timestamp': new_message.timestamp.isoformat(),
             'status': 'sent',
             'deleted': False,
             'chat_id': new_message.chat_id 
@@ -86,7 +85,8 @@ def send_message():
 
         return jsonify({
             "message": "Message sent successfully",
-            "chat_id": new_message.chat_id
+            "chat_id": new_message.chat_id,
+            "timestamp": new_message.timestamp
         }), 200
     
     except Exception as e:
@@ -248,7 +248,7 @@ def get_all_chats():
                 "user_name": other_user.name,
                 "last_message": chat.message if not chat.deleted else "This message was deleted",
                 "unread_count": unread_count,
-                "timestamp": chat.timestamp.isoformat()
+                "timestamp": chat.timestamp
             })
 
         return jsonify(results), 200

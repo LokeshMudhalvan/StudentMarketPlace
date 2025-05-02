@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import {
     AppBar,
@@ -101,39 +101,72 @@ const Header = () => {
                         navigate('/');
                     } else {
                         console.error('An error occurred while fetching user profile picture:', e);
-                        setError(e.response?.data?.msg || 'An error occurred while fetching user profile picture');
+                        console.error(e.response?.data?.msg || 'An error occurred while fetching user profile picture');
                     }
                 }
             };
             
             fetchUserData();
         }
-    }, [authenticated, token]);
+    }, [authenticated, token, navigate]);
+
+    const fetchUnreadCount = useCallback(async () => {
+        if (!authenticated || !token || !userId) return;
+        
+        try {
+            const response = await axios.get(`http://localhost:5001/chat/show-all`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            
+            if (response.data) {
+                const chats = response.data;
+                const count = chats.reduce((total, chat) => total + chat.unread_count, 0);
+                setTotalUnreadCount(count);
+                return chats;
+            }
+        } catch (e) {
+            console.error('Error fetching unread count:', e);
+        }
+        return null;
+    }, [authenticated, token, userId]);
 
     useEffect(() => {
         if (authenticated && token && userId) {
-            const fetchUnreadCount = async () => {
-                try {
-                    const response = await axios.get(`http://localhost:5001/chat/show-all`, {
-                        headers: { Authorization: `Bearer ${token}` },
-                    });
-                    
-                    if (response.data) {
-                        const count = response.data.reduce((total, chat) => total + chat.unread_count, 0);
-                        setTotalUnreadCount(count);
-                    }
-                } catch (e) {
-                    console.error('Error fetching unread count:', e);
+            fetchUnreadCount();
+            
+            const intervalId = setInterval(fetchUnreadCount, 10000);
+            
+            const handleVisibilityChange = () => {
+                if (document.visibilityState === 'visible') {
+                    fetchUnreadCount();
                 }
             };
             
-            fetchUnreadCount();
+            const handleRouteChange = () => {
+                setTimeout(() => {
+                    forceRefreshUnreadCount();
+                }, 1000);
+            };
             
-            const intervalId = setInterval(fetchUnreadCount, 30000);
+            document.addEventListener('visibilitychange', handleVisibilityChange);
+            window.addEventListener('popstate', handleRouteChange);
             
-            return () => clearInterval(intervalId);
+            const handleCustomEvent = () => {
+                forceRefreshUnreadCount();
+            };
+            
+            window.addEventListener('chat-message-sent', handleCustomEvent);
+            window.addEventListener('chat-read', handleCustomEvent);
+            
+            return () => {
+                clearInterval(intervalId);
+                document.removeEventListener('visibilitychange', handleVisibilityChange);
+                window.removeEventListener('popstate', handleRouteChange);
+                window.removeEventListener('chat-message-sent', handleCustomEvent);
+                window.removeEventListener('chat-read', handleCustomEvent);
+            };
         }
-    }, [authenticated, token, userId]);
+    }, [authenticated, token, userId, fetchUnreadCount]);
 
     const handleChangeTheme = () => {
         setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
@@ -155,22 +188,37 @@ const Header = () => {
     const handleChatsClick = async () => {
         handleClose();
         try {
-            const response = await axios.get(`http://localhost:5001/chat/show-all`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            if (response.data) {
-                const sortedChats = response.data.sort((a, b) => 
+            const chats = await fetchUnreadCount();
+            
+            if (chats) {
+                const sortedChats = chats.sort((a, b) => 
                     new Date(b.timestamp) - new Date(a.timestamp)
                 );
                 setAllChats(sortedChats);
                 setChatDrawerOpen(true);
+            } else {
+                const response = await axios.get(`http://localhost:5001/chat/show-all`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                
+                if (response.data) {
+                    const sortedChats = response.data.sort((a, b) => 
+                        new Date(b.timestamp) - new Date(a.timestamp)
+                    );
+                    setAllChats(sortedChats);
+                    
+                    const count = response.data.reduce((total, chat) => total + chat.unread_count, 0);
+                    setTotalUnreadCount(count);
+                    
+                    setChatDrawerOpen(true);
+                }
             }
         } catch (e) {
             if (e.response && (e.response.status === 422 || e.response.data.msg === 'Token has expired')) {
                 navigate('/');
             } else {
                 console.error('An error occurred while fetching all chats:', e);
-                setError(e.response?.data?.msg || 'An error occurred while fetching all chats');
+                console.error(e.response?.data?.msg || 'An error occurred while fetching all chats');
             }
         }
     };
@@ -180,8 +228,35 @@ const Header = () => {
         navigate('/');
     };
 
-    const handleChatSelect = (listing_id, seller_id, buyer_id) => {
+    const handleChatSelect = async (listing_id, seller_id, buyer_id) => {
         setChatDrawerOpen(false);
+        
+        setAllChats(prevChats => 
+            prevChats.map(chat => 
+                chat.listing_id === listing_id && 
+                chat.seller_id === seller_id && 
+                chat.buyer_id === buyer_id 
+                    ? { ...chat, unread_count: 0 } 
+                    : chat
+            )
+        );
+        
+        setTotalUnreadCount(prevCount => {
+            const selectedChat = allChats.find(chat => 
+                chat.listing_id === listing_id && 
+                chat.seller_id === seller_id && 
+                chat.buyer_id === buyer_id
+            );
+            return Math.max(0, prevCount - (selectedChat?.unread_count || 0));
+        });
+    
+        localStorage.setItem('lastOpenedChat', JSON.stringify({
+            listing_id,
+            seller_id,
+            buyer_id,
+            timestamp: new Date().getTime()
+        }));
+        
         navigate(`/chat/${listing_id}/${seller_id}/${buyer_id}`);
     };
 
@@ -193,7 +268,7 @@ const Header = () => {
     const handleProfileSettings = () => {
         handleClose();
         navigate('/update-user');
-    }
+    };
 
     const openSearchDrawer = () => {
         setSearchDrawerOpen(true);
@@ -229,6 +304,36 @@ const Header = () => {
         } else {
             return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
         }
+    };
+
+    const handleCloseDrawer = () => {
+        setChatDrawerOpen(false);
+        setTimeout(() => {
+            fetchUnreadCount();
+        }, 500);
+    };
+    
+    const forceRefreshUnreadCount = async () => {
+        if (authenticated && token && userId) {
+            return axios.get(`http://localhost:5001/chat/show-all`, {
+                headers: { Authorization: `Bearer ${token}` },
+            })
+            .then(response => {
+                if (response.data) {
+                    const count = response.data.reduce((total, chat) => total + chat.unread_count, 0);
+                    setTotalUnreadCount(count);
+                    setAllChats(response.data.sort((a, b) => 
+                        new Date(b.timestamp) - new Date(a.timestamp)
+                    ));
+                }
+                return response.data;
+            })
+            .catch(e => {
+                console.error('Error in force refresh:', e);
+                return null;
+            });
+        }
+        return Promise.resolve(null);
     };
 
     return (
@@ -310,7 +415,7 @@ const Header = () => {
             <Drawer
                 anchor="right"
                 open={chatDrawerOpen}
-                onClose={() => setChatDrawerOpen(false)}
+                onClose={handleCloseDrawer}
             >
                 <div style={{ width: 350 }}>
                     <Typography variant="h6" sx={{ p: 2 }}>Your Chats</Typography>
@@ -373,7 +478,7 @@ const Header = () => {
                                                         component="div"
                                                         sx={{ color: 'text.secondary' }}
                                                     >
-                                                        {chat.user_name}
+                                                        {`from: ${chat.user_name}`}
                                                     </Typography>
                                                 </>
                                             }

@@ -69,7 +69,7 @@ const YourListings = () => {
 
         const fetchYourListings = async () => {
             try {
-                const response = await axios.get(`http://localhost:5001/listings/show-individual-listings/${currentPage}`, {
+                const response = await axios.get(`http://127.0.0.1:5001/listings/show-individual-listings/${currentPage}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     }
@@ -99,7 +99,7 @@ const YourListings = () => {
     const handleDeleteListing = async (listing_id) => {
         try {
             setLoading(true);
-            const response = await axios.delete(`http://localhost:5001/listings/delete/${listing_id}`, {
+            const response = await axios.delete(`http://127.0.0.1:5001/listings/delete/${listing_id}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     }
@@ -149,9 +149,9 @@ const YourListings = () => {
                 ) : listings.length === 0 ? (
                     <Typography color="text.secondary">No listings found.</Typography>
                 ) : (
-                    <Grid container spacing={4}>
+                    <Grid container spacing={4} sx={{ pl: '150px', alignItems: 'stretch' }}>
                         {listings.map((listing, index) => (
-                            <Grid item xs={12} sm={6} md={4} key={index}>
+                            <Grid item xs={12} sm={6} md={4} key={index} sx={{ display: 'flex' }}>
                                 <Card
                                     className="listing-card"
                                     sx={{
@@ -159,6 +159,11 @@ const YourListings = () => {
                                         boxShadow: 3,
                                         transition: "transform 0.3s",
                                         "&:hover": { transform: "scale(1.03)" },
+                                        position: "relative",
+                                        width: '100%',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        minHeight: '450px'
                                     }}
                                 >
                                     {listing.image_urls && listing.image_urls.length > 0 && (
@@ -166,7 +171,7 @@ const YourListings = () => {
                                             <CardMedia
                                                 component="img"
                                                 height="200"
-                                                image={`http://localhost:5001${listing.image_urls[activeSteps[listing.listing_id] || 0]}`}
+                                                image={`http://127.0.0.1:5001${listing.image_urls[activeSteps[listing.listing_id] || 0]}`}
                                                 alt={`${listing.item_name} Image`}
                                             />
                                             
@@ -236,42 +241,63 @@ const YourListings = () => {
                                         </Box>
                                     )}
 
-                                    <CardContent>
-                                        <Box display="flex" justifyContent="space-between" alignItems="center">
-                                            <Typography variant="h6" fontWeight="bold">
-                                                {listing.item_name}
-                                            </Typography>
-                                            <Box display="flex" alignItems="center" gap={1}>
-                                                <Tooltip title="Edit Listing">
-                                                    <IconButton
-                                                        color="primary"
-                                                        onClick={() => navigate(`/edit-listing/${listing.listing_id}`)}
-                                                    >
-                                                        <EditIcon />
-                                                    </IconButton>
-                                                </Tooltip>
-                                                <Tooltip title="Delete Listing">
-                                                    <IconButton
-                                                        color="error"
-                                                        onClick={() => handleDeleteListing(listing.listing_id)}
-                                                    >
-                                                        <DeleteIcon />
-                                                    </IconButton>
-                                                </Tooltip>
+                                    <CardContent sx={{ 
+                                        flexGrow: 1, 
+                                        display: 'flex', 
+                                        flexDirection: 'column',
+                                        justifyContent: 'space-between',
+                                        p: 2
+                                    }}>
+                                        <Box>
+                                            <Box display="flex" justifyContent="space-between" alignItems="center">
+                                                <Typography variant="h6" fontWeight="bold">
+                                                    {listing.item_name}
+                                                </Typography>
+                                                <Box display="flex" alignItems="center" gap={1}>
+                                                    <Tooltip title="Edit Listing">
+                                                        <IconButton
+                                                            color="primary"
+                                                            onClick={() => navigate(`/edit-listing/${listing.listing_id}`)}
+                                                        >
+                                                            <EditIcon />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                    <Tooltip title="Delete Listing">
+                                                        <IconButton
+                                                            color="error"
+                                                            onClick={() => handleDeleteListing(listing.listing_id)}
+                                                        >
+                                                            <DeleteIcon />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                </Box>
                                             </Box>
+                                            <Typography variant="body2" color="text.secondary">
+                                                Condition: {listing.condition}
+                                            </Typography>
+                                            <Typography variant="h6" color="primary" mt={1}>
+                                                ${listing.price}
+                                            </Typography>
+                                            <Typography 
+                                                variant="body2" 
+                                                mt={1}
+                                                sx={{
+                                                    display: '-webkit-box',
+                                                    WebkitLineClamp: 3, 
+                                                    WebkitBoxOrient: 'vertical',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    minHeight: '60px'
+                                                }}
+                                            >
+                                                {listing.description || "No description"}
+                                            </Typography>
                                         </Box>
-                                        <Typography variant="body2" color="text.secondary">
-                                            Condition: {listing.condition}
-                                        </Typography>
-                                        <Typography variant="h6" color="primary" mt={1}>
-                                            ${listing.price}
-                                        </Typography>
-                                        <Typography variant="body2" mt={1}>
-                                            {listing.description || "No description"}
-                                        </Typography>
-                                        <Typography variant="caption" color="text.secondary" mt={2} display="block">
-                                            Posted by: {listing.user || "Unknown"}
-                                        </Typography>
+                                        <Box sx={{ mt: 'auto' }}>
+                                            <Typography variant="caption" color="text.secondary" display="block">
+                                                Posted by: {listing.user || "Unknown"}
+                                            </Typography>
+                                        </Box>
                                     </CardContent>
                                 </Card>
                             </Grid>
@@ -281,7 +307,7 @@ const YourListings = () => {
                 {totalListings > 12 && (
                     <Box display="flex" justifyContent="center" mt={3}>
                         <Pagination
-                            count={Math.ceil(totalListings / 10)} 
+                            count={Math.ceil(totalListings / 12)} 
                             page={currentPage}
                             onChange={(e, page) => setCurrentPage(page)} 
                             color="primary"

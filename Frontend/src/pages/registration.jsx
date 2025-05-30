@@ -45,7 +45,7 @@ const Registration = () => {
         };
 
         try { 
-            const response = await axios.post('http://localhost:5001/auth/register', registrationInfo);
+            const response = await axios.post('http://127.0.0.1:5001/auth/register', registrationInfo);
             console.log('User registered successfully');
             setMessage(response.data.message);
 

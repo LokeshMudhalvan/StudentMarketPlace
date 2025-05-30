@@ -39,7 +39,7 @@ const UserSettings = () => {
 
   const fetchUserData = async () => {
     try {
-      const profilePicResponse = await axios.get('http://localhost:5001/users/profile-picture', {
+      const profilePicResponse = await axios.get('http://127.0.0.1:5001/users/profile-picture', {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -47,7 +47,7 @@ const UserSettings = () => {
       
       if (profilePicResponse.data && profilePicResponse.data.profile_picture_url) {
         const picUrl = profilePicResponse.data.profile_picture_url;
-        setPreview(picUrl.startsWith('http') ? picUrl : `http://localhost:5001${picUrl}`);
+        setPreview(picUrl.startsWith('http') ? picUrl : `http://127.0.0.1:5001${picUrl}`);
       }
     } catch (e) {
         if (e.response && (e.response.status === 422 || e.response.data.msg === 'Token has expired')) {
@@ -92,7 +92,7 @@ const UserSettings = () => {
 
     try {
       const response = await axios.put(
-        'http://localhost:5001/users/update-user', 
+        'http://127.0.0.1:5001/users/update-user', 
         formData,
         {
           headers: {

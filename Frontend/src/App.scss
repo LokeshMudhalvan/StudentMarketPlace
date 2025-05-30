@@ -1,8 +1,9 @@
 body {
     --header-theme-icon-color: #ffffff;
-    --header-background-color: #559119; 
-    --background-color: #ffffff;   
+    --header-background-color: rgb(107,77,56); 
+    --background-color: #e7d7c9;   
     --text-color: #000;
+    --card-background-color: #f4efe6;
 }
 
 body.dark {
@@ -36,6 +37,7 @@ body {
     .listing-card {
         height: 395.95px;
         max-width: 270px;
+        background-color: var(--card-background-color);
     }
 }
 

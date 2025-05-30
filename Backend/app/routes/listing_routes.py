@@ -68,7 +68,7 @@ def show_listings(current_page):
         offset = (current_page - 1) * 12 
         total_listings = Listings.query.count()
 
-        listing_query = Listings.query.offset(offset).limit(limit)
+        listing_query = Listings.query.order_by(Listings.created_at.desc()).offset(offset).limit(limit)
         listings = listing_query.all()
         listing_display = []
 
@@ -116,7 +116,7 @@ def show_individual_listings(current_page):
         limit = 12
         offset = (current_page - 1) * 12
 
-        listing_query = Listings.query.filter_by(user_id=user_id).offset(offset).limit(limit)
+        listing_query = Listings.query.filter_by(user_id=user_id).order_by(Listings.created_at.desc()).offset(offset).limit(limit)
         listings = listing_query.all()
 
         listing_display = []

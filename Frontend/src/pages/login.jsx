@@ -36,7 +36,7 @@ const Login = () => {
         };
 
         try { 
-            const response = await axios.post('http://localhost:5001/auth/login', loginInfo);
+            const response = await axios.post('http://127.0.0.1:5001/auth/login', loginInfo);
             console.log(response.data);
             
             if (response.data.access_token) {

@@ -66,7 +66,7 @@ const SavedListing = () => {
             }
     
             try {
-                const response = await axios.get(`http://localhost:5001/users/user-id`, {
+                const response = await axios.get(`http://127.0.0.1:5001/users/user-id`, {
                     headers: {
                       Authorization: `Bearer ${token}`,
                     },
@@ -95,7 +95,7 @@ const SavedListing = () => {
         const getSavedListings = async () => {
             try {
                 setLoading(true);
-                const response = await axios.get(`http://localhost:5001/saved/show-saved-listings/${currentPage}`, {
+                const response = await axios.get(`http://127.0.0.1:5001/saved/show-saved-listings/${currentPage}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     }
@@ -123,7 +123,7 @@ const SavedListing = () => {
     const handleUnsaveListing = async (listing_id) => {
         try {
             setLoading(true);
-            await axios.post(`http://localhost:5001/saved/save-listing/${listing_id}`, {}, {
+            await axios.post(`http://127.0.0.1:5001/saved/save-listing/${listing_id}`, {}, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 }
@@ -169,9 +169,9 @@ const SavedListing = () => {
                         </Button>
                     </Box>
                 ) : (
-                    <Grid container spacing={4}>
+                    <Grid container spacing={4} sx={{ pl: '150px', alignItems: 'stretch' }}>
                         {savedListings.map((listing, index) => (
-                            <Grid item xs={12} sm={6} md={4} key={index}>
+                            <Grid item xs={12} sm={6} md={4} key={index} sx={{ display: 'flex' }}>
                                 <Card
                                     className="listing-card"
                                     sx={{
@@ -179,7 +179,11 @@ const SavedListing = () => {
                                         boxShadow: 3,
                                         transition: "transform 0.3s",
                                         "&:hover": { transform: "scale(1.03)" },
-                                        position: "relative"
+                                        position: "relative",
+                                        width: '100%',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        minHeight: '450px'
                                     }}
                                 >
                                     <IconButton 
@@ -187,11 +191,11 @@ const SavedListing = () => {
                                             position: 'absolute', 
                                             top: 8, 
                                             right: 8, 
-                                            bgcolor: 'rgba(255, 255, 255, 0.7)',
+                                            bgcolor: '#f4efe6',
                                             '&:hover': {
                                                 bgcolor: 'rgba(255, 255, 255, 0.9)',
                                             },
-                                            zIndex: 10
+                                            zIndex: 2
                                         }}
                                         onClick={() => handleUnsaveListing(listing.listing_id)}
                                     >
@@ -203,7 +207,7 @@ const SavedListing = () => {
                                             <CardMedia
                                                 component="img"
                                                 height="200"
-                                                image={`http://localhost:5001${listing.image_urls[activeSteps[listing.listing_id] || 0]}`}
+                                                image={`http://127.0.0.1:5001${listing.image_urls[activeSteps[listing.listing_id] || 0]}`}
                                                 alt={`${listing.item_name} Image`}
                                             />
                                             
@@ -273,30 +277,52 @@ const SavedListing = () => {
                                         </Box>
                                     )}
 
-                                    <CardContent>
-                                        <Typography variant="h6" fontWeight="bold">
-                                            {listing.item_name}
-                                        </Typography>
-                                        <Typography variant="body2" color="text.secondary">
-                                            Condition: {listing.condition}
-                                        </Typography>
-                                        <Typography variant="h6" color="primary" mt={1}>
-                                            ${listing.price}
-                                        </Typography>
-                                        <Typography variant="body2" mt={1}>
-                                            {listing.description || "No description"}
-                                        </Typography>
-                                        <Typography variant="caption" color="text.secondary" mt={2} display="block">
-                                            Posted by: {listing.user || "Unknown"}
-                                        </Typography>
-                                        {listing.user_id !== userId && (
-                                            <Button
-                                                className="bg-green-600 text-white px-4 py-1 rounded mt-2"
-                                                onClick={() => navigate(`/chat/${listing.listing_id}/${listing.user_id}/${userId}`)}
+                                    <CardContent sx={{ 
+                                        flexGrow: 1, 
+                                        display: 'flex', 
+                                        flexDirection: 'column',
+                                        justifyContent: 'space-between',
+                                        p: 2
+                                    }}>
+                                        <Box>
+                                            <Typography variant="h6" fontWeight="bold">
+                                                {listing.item_name}
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary">
+                                                Condition: {listing.condition}
+                                            </Typography>
+                                            <Typography variant="h6" color="primary" mt={1}>
+                                                ${listing.price}
+                                            </Typography>
+                                            <Typography 
+                                                variant="body2" 
+                                                mt={1}
+                                                sx={{
+                                                    display: '-webkit-box',
+                                                    WebkitLineClamp: 3, 
+                                                    WebkitBoxOrient: 'vertical',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    minHeight: '60px'
+                                                }}
                                             >
-                                                Message Seller
-                                            </Button>
-                                        )}
+                                                {listing.description || "No description"}
+                                            </Typography>
+                                        </Box>
+                                        <Box sx={{ mt: 'auto' }}>
+                                            <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+                                                Posted by: {listing.user || "Unknown"}
+                                            </Typography>
+                                            {listing.user_id !== userId && (
+                                                <Button
+                                                    className="bg-green-600 text-white px-4 py-1 rounded"
+                                                    onClick={() => navigate(`/chat/${listing.listing_id}/${listing.user_id}/${userId}`)}
+                                                    fullWidth
+                                                >
+                                                    Message Seller
+                                                </Button>
+                                            )}
+                                        </Box>
                                     </CardContent>
                                 </Card>
                             </Grid>
@@ -306,7 +332,7 @@ const SavedListing = () => {
                 {totalListings > 12 && (
                     <Box display="flex" justifyContent="center" mt={3}>
                         <Pagination
-                            count={Math.ceil(totalListings / 10)} 
+                            count={Math.ceil(totalListings / 12)} 
                             page={currentPage}
                             onChange={(e, page) => setCurrentPage(page)} 
                             color="primary"

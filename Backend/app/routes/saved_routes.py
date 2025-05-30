@@ -61,7 +61,7 @@ def show_saved_listings():
         offset = (current_page - 1) * 12 
 
         listing_query = SavedListings.query.filter_by(user_id=user_id).offset(offset).limit(limit)"""
-        save_listings = SavedListings.query.filter_by(user_id=user_id).all()
+        save_listings = SavedListings.query.join(Listings).filter(SavedListings.user_id == user_id).order_by(Listings.created_at.desc()).all()
 
         saved_listings = []
         for listing in save_listings:
@@ -106,7 +106,7 @@ def fetch_saved_listings(current_page):
         limit = 12
         offset = (current_page - 1) * 12 
 
-        listing_query = SavedListings.query.filter_by(user_id=user_id).offset(offset).limit(limit)
+        listing_query = SavedListings.query.join(Listings).filter(SavedListings.user_id == user_id).order_by(Listings.created_at.desc()).offset(offset).limit(limit)
         save_listings = listing_query.all()
 
         saved_listings = []

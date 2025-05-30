@@ -54,31 +54,30 @@ def search_listing():
 
         listings_data = []
         for listing in results:
-            if user_id != listing.user_id:
-                user = Users.query.get(listing.user_id)
-                
-                listing_info = {
-                    "listing_id": listing.listing_id,
-                    "user_id": listing.user_id,
-                    "item_name": listing.item_name,
-                    "description": listing.description,
-                    "price": listing.price,
-                    "condition": listing.condition,
-                    "category": listing.category,
-                    "university": listing.university,
-                    "created_at": listing.created_at,
-                    "user": user.name if user else "Unknown"
-                }
-                
-                if listing.images:
-                    image_urls = []
-                    number_of_images = len(listing.images)
-                    for i in range(number_of_images):
-                        image_url = url_for('static', filename=f'listing-images/{listing.images[i].rsplit('/', 1)[1]}')
-                        image_urls.append(image_url) 
+            user = Users.query.get(listing.user_id)
             
-                    listing_info['image_urls'] = image_urls
-                listings_data.append(listing_info)
+            listing_info = {
+                "listing_id": listing.listing_id,
+                "user_id": listing.user_id,
+                "item_name": listing.item_name,
+                "description": listing.description,
+                "price": listing.price,
+                "condition": listing.condition,
+                "category": listing.category,
+                "university": listing.university,
+                "created_at": listing.created_at,
+                "user": user.name if user else "Unknown"
+            }
+            
+            if listing.images:
+                image_urls = []
+                number_of_images = len(listing.images)
+                for i in range(number_of_images):
+                    image_url = url_for('static', filename=f'listing-images/{listing.images[i].rsplit('/', 1)[1]}')
+                    image_urls.append(image_url) 
+        
+                listing_info['image_urls'] = image_urls
+            listings_data.append(listing_info)
 
         return jsonify({
             "results": listings_data,

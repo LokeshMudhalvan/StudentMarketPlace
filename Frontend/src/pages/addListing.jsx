@@ -46,7 +46,7 @@ const AddListing = () => {
         setError('');
         setLoading(true);
 
-        const response = await axios.get("http://localhost:5001/users/university-name", {
+        const response = await axios.get("http://127.0.0.1:5001/users/university-name", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -93,7 +93,7 @@ const AddListing = () => {
     }
 
     try {
-      const response = await axios.post("http://localhost:5001/listings/create", data, {
+      const response = await axios.post("http://127.0.0.1:5001/listings/create", data, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",

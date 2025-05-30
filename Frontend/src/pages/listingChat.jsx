@@ -56,7 +56,7 @@ const ListingChat = () => {
 
         try {
             setLoading(true);
-            const response = await axios.get(`http://localhost:5001/users/user-id`, {
+            const response = await axios.get(`http://127.0.0.1:5001/users/user-id`, {
                 headers: {
                   Authorization: `Bearer ${token}`,
                 },
@@ -90,7 +90,7 @@ const ListingChat = () => {
     let socket = null;
     
     if (token && authenticated && !authLoading && userId) {
-      socket = io("http://localhost:5001", {
+      socket = io("http://127.0.0.1:5001", {
         query: { token }
       });
       socketRef.current = socket;
@@ -196,7 +196,7 @@ const ListingChat = () => {
     const fetchListingInfo = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`http://localhost:5001/listings/show/${listing_id}`, {
+        const response = await axios.get(`http://127.0.0.1:5001/listings/show/${listing_id}`, {
             headers: {
               Authorization: `Bearer ${token}`,
             },
@@ -222,7 +222,7 @@ const ListingChat = () => {
       try {
         setLoading(true);        
         const response = await axios.get(
-          `http://localhost:5001/chat/get-messages/${listing_id}`,
+          `http://127.0.0.1:5001/chat/get-messages/${listing_id}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -290,7 +290,7 @@ const ListingChat = () => {
   const updateMessageStatus = async (chatId, status) => {
     try {
       const response = await axios.put(
-        'http://localhost:5001/chat/update-message-status',
+        'http://127.0.0.1:5001/chat/update-message-status',
         {
           chat_id: chatId,
           status: status
@@ -350,7 +350,7 @@ const ListingChat = () => {
         setTempMessageId(tempId);
       }
   
-      const response = await axios.post("http://localhost:5001/chat/send-message", formData, {
+      const response = await axios.post("http://127.0.0.1:5001/chat/send-message", formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
@@ -441,7 +441,7 @@ const ListingChat = () => {
     try {
       setLoading(true);
       const response = await axios.delete(
-        `http://localhost:5001/chat/delete-message/${selectedMessage.chat_id}`,
+        `http://127.0.0.1:5001/chat/delete-message/${selectedMessage.chat_id}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -473,7 +473,7 @@ const ListingChat = () => {
     if (!mediaUrls || mediaUrls.length === 0) return null;
 
     return mediaUrls.map((url, idx) => {
-      const mediaUrl = url.startsWith('blob:') ? url : url.startsWith('http') ? url : `http://localhost:5001${url}`;
+      const mediaUrl = url.startsWith('blob:') ? url : url.startsWith('http') ? url : `http://127.0.0.1:5001${url}`;
       
       return (
         <Box
@@ -544,7 +544,7 @@ const ListingChat = () => {
               <Box display="flex" alignItems="center">
                 {listingInfo.image_urls && <Box 
                   component="img"
-                  src={listingInfo.image_urls ? `http://localhost:5001${listingInfo.image_urls[0]}` : "/placeholder.jpg"}
+                  src={listingInfo.image_urls ? `http://127.0.0.1:5001${listingInfo.image_urls[0]}` : "/placeholder.jpg"}
                   alt={listingInfo.item_name}
                   sx={{ 
                     width: 50, 

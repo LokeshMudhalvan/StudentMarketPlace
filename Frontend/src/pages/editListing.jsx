@@ -50,13 +50,13 @@ const EditListing = () => {
       setLoading(true);
 
       try {
-        const response = await axios.get(`http://localhost:5001/listings/show/${listing_id}`, {
+        const response = await axios.get(`http://127.0.0.1:5001/listings/show/${listing_id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           }
         });
 
-        const universityData = await axios.get("http://localhost:5001/users/university-name", {
+        const universityData = await axios.get("http://127.0.0.1:5001/users/university-name", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -75,7 +75,7 @@ const EditListing = () => {
             const existingImgs = response.data.image_urls.map((image_url, index) => ({
               id: `existing-${index}`,
               path: image_url,
-              url: `http://localhost:5001${image_url}`
+              url: `http://127.0.0.1:5001${image_url}`
             }));
             setExistingImages(existingImgs);
           }
@@ -127,7 +127,7 @@ const EditListing = () => {
     }
 
     try {
-      const response = await axios.put(`http://localhost:5001/listings/update-info/${listing_id}`, data, {
+      const response = await axios.put(`http://127.0.0.1:5001/listings/update-info/${listing_id}`, data, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",

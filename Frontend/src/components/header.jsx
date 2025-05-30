@@ -70,7 +70,7 @@ const Header = () => {
         if (authenticated && token) {
             const fetchUserData = async () => {
                 try {
-                    const userIdResponse = await axios.get(`http://localhost:5001/users/user-id`, {
+                    const userIdResponse = await axios.get(`http://127.0.0.1:5001/users/user-id`, {
                         headers: {
                             Authorization: `Bearer ${token}`,
                         },
@@ -81,7 +81,7 @@ const Header = () => {
                     }
 
                     try {
-                        const profilePicResponse = await axios.get(`http://localhost:5001/users/profile-picture`, {
+                        const profilePicResponse = await axios.get(`http://127.0.0.1:5001/users/profile-picture`, {
                             headers: {
                                 Authorization: `Bearer ${token}`,
                             },
@@ -89,7 +89,7 @@ const Header = () => {
                         
                         if (profilePicResponse.data && profilePicResponse.data.profile_picture_url) {
                             const picUrl = profilePicResponse.data.profile_picture_url;
-                            setProfilePicUrl(picUrl.startsWith('http') ? picUrl : `http://localhost:5001${picUrl}`);
+                            setProfilePicUrl(picUrl.startsWith('http') ? picUrl : `http://127.0.0.1:5001${picUrl}`);
                         }
                     } catch (picError) {
                         console.log("No profile picture found or error fetching it:", picError);
@@ -114,7 +114,7 @@ const Header = () => {
         if (!authenticated || !token || !userId) return;
         
         try {
-            const response = await axios.get(`http://localhost:5001/chat/show-all`, {
+            const response = await axios.get(`http://127.0.0.1:5001/chat/show-all`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             
@@ -197,7 +197,7 @@ const Header = () => {
                 setAllChats(sortedChats);
                 setChatDrawerOpen(true);
             } else {
-                const response = await axios.get(`http://localhost:5001/chat/show-all`, {
+                const response = await axios.get(`http://127.0.0.1:5001/chat/show-all`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 
@@ -315,7 +315,7 @@ const Header = () => {
     
     const forceRefreshUnreadCount = async () => {
         if (authenticated && token && userId) {
-            return axios.get(`http://localhost:5001/chat/show-all`, {
+            return axios.get(`http://127.0.0.1:5001/chat/show-all`, {
                 headers: { Authorization: `Bearer ${token}` },
             })
             .then(response => {

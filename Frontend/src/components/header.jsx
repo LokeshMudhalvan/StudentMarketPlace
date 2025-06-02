@@ -390,6 +390,7 @@ const Header = () => {
                                 onClose={handleClose}
                                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                                classes={{ paper: 'card' }}
                             >
                                 <MenuItem onClick={handleProfileSettings}>Profile Settings</MenuItem>
                                 <MenuItem onClick={yourListing}>Your Listings</MenuItem>
@@ -416,6 +417,7 @@ const Header = () => {
                 anchor="right"
                 open={chatDrawerOpen}
                 onClose={handleCloseDrawer}
+                classes={{ paper: 'card' }}
             >
                 <div style={{ width: 350 }}>
                     <Typography variant="h6" sx={{ p: 2 }}>Your Chats</Typography>
@@ -509,6 +511,7 @@ const Header = () => {
                 anchor="top"
                 open={searchDrawerOpen}
                 onClose={() => setSearchDrawerOpen(false)}
+                classes={{ paper: 'card' }}
             >
                 <Box sx={{ p: 3, width: 'auto' }}>
                     <Typography variant="h6" gutterBottom>Search Listings</Typography>

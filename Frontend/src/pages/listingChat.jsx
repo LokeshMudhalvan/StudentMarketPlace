@@ -482,9 +482,9 @@ const ListingChat = () => {
           src={mediaUrl}
           alt={`Attachment ${idx + 1}`}
           sx={{ 
-            maxWidth: "100%", 
-            borderRadius: 2,
-            mb: 1
+            maxHeight: 200, 
+            maxWidth: 200,
+            borderRadius: 2
           }}
           onError={(e) => {
             console.error("Failed to load image:", url);
@@ -515,6 +515,7 @@ const ListingChat = () => {
       <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
         <Paper 
           elevation={3} 
+          className="card"
           sx={{ 
             borderRadius: 2, 
             overflow: "hidden",
@@ -525,8 +526,8 @@ const ListingChat = () => {
         >
 
           <Box 
+            className="card"
             sx={{ 
-              bgcolor: "#f9f9f9", 
               p: 2, 
               borderBottom: "1px solid #e0e0e0",
               display: "flex",
@@ -567,6 +568,7 @@ const ListingChat = () => {
           </Box>
 
           <Box 
+            className="card"
             sx={{ 
               p: 2, 
               flexGrow: 1,
@@ -601,9 +603,10 @@ const ListingChat = () => {
                       {renderMedia(msg.media_url)}
                       {msg.message && msg.message.trim() !== '' && (
                         <Paper 
+                          className="card"
                           sx={{ 
                             p: 2, 
-                            bgcolor: Number(msg.sender_id) === Number(userId) ? "#25D366" : "#f0f0f0",
+                            bgcolor: Number(msg.sender_id) === Number(userId) ? "#25D366" : "transparent",
                             color: Number(msg.sender_id) === Number(userId) ? "white" : "inherit",
                             borderRadius: 2,
                             opacity: msg.status === "sending" ? 0.7 : 1,
@@ -611,7 +614,7 @@ const ListingChat = () => {
                           }}
                           onClick={(e) => handleMessageMenuOpen(e, msg)}
                         >
-                          <Typography variant="body1">
+                          <Typography variant="body1" sx={{color: "black"}}>
                             {msg.message}
                           </Typography>
                         </Paper>
@@ -622,7 +625,7 @@ const ListingChat = () => {
                         justifyContent={Number(msg.sender_id) === Number(userId) ? "flex-end" : "flex-start"}
                         sx={{ mt: 0.5 }}
                       >
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography variant="caption" sx={{color: "black"}}>
                           {formatTimestamp(msg.timestamp)}
                         </Typography>
                         {renderMessageStatus(msg)}
@@ -630,14 +633,14 @@ const ListingChat = () => {
                     </>
                   ) : (
                     <Paper 
+                      className="card"
                       sx={{ 
                         p: 2, 
-                        bgcolor: "#f0f0f0",
                         fontStyle: "italic",
                         borderRadius: 2,
                       }}
                     >
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography variant="body2" sx={{color: "black"}}>
                         This message was deleted
                       </Typography>
                       <Typography 
@@ -656,7 +659,7 @@ const ListingChat = () => {
           </Box>
 
           {mediaPreview && (
-            <Box sx={{ p: 2, borderTop: "1px solid #e0e0e0" }}>
+            <Box className="card" sx={{ p: 2, borderTop: "1px solid #e0e0e0" }}>
               <Box sx={{ position: "relative", display: "inline-block" }}>
                 <img 
                   src={mediaPreview} 
@@ -690,6 +693,7 @@ const ListingChat = () => {
           <Box 
             component="form" 
             onSubmit={handleSendMessage}
+            className="card"
             sx={{ 
               p: 2, 
               borderTop: "1px solid #e0e0e0",
@@ -717,7 +721,13 @@ const ListingChat = () => {
               onChange={(e) => setMessage(e.target.value)}
               variant="outlined"
               size="small"
-              sx={{ mx: 1 }}
+              className="card"
+              sx={{ 
+                mx: 1,
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: 'transparent'
+                }
+              }}
               disabled={loading}
             />
             <Button
@@ -743,6 +753,7 @@ const ListingChat = () => {
         anchorEl={messageMenuAnchorEl}
         open={Boolean(messageMenuAnchorEl)}
         onClose={handleMessageMenuClose}
+        classes={{ paper: 'card' }}
       >
         <MenuItem onClick={handleDeleteMessage}>Delete Message</MenuItem>
       </Menu>
@@ -752,10 +763,12 @@ const ListingChat = () => {
         autoHideDuration={6000}
         onClose={handleCloseNotification}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        className="card"
       >
         <Alert 
           onClose={handleCloseNotification} 
           severity="info" 
+          className="card"
           sx={{ 
             width: '100%',
             cursor: 'pointer',

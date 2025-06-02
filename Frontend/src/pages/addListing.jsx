@@ -161,8 +161,19 @@ const AddListing = () => {
   return (
     <>
     <Header />
-    <Container maxWidth="sm" sx={{ mt: 6 }}>
+    <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+      <Button 
+        variant="contained" 
+        color="primary" 
+        sx={{ mt: 2, mb: 2, mr: 2 }}
+        onClick={() => navigate('/dashboard')}
+      >
+        Browse Listings
+      </Button>
+    </Box>
+    <Container display="flex" maxWidth="sm" sx={{ mt: 1 }}>
         <Box 
+        className="card"
         sx={{ 
             backgroundColor: "#f9f9f9", 
             p: 4, 
@@ -250,6 +261,7 @@ const AddListing = () => {
             
             <Box
               {...getRootProps()}
+              className="card"
               sx={{
                 border: "2px dashed #ccc",
                 borderRadius: 2,

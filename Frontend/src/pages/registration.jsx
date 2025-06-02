@@ -63,7 +63,7 @@ const Registration = () => {
         <div>
             <Header/>
             <Container maxWidth="sm">
-            <Paper elevation={3} sx={{ padding: 4, marginTop: 10, borderRadius: 3 }}>
+            <Paper elevation={3} className="card" sx={{ padding: 4, marginTop: 10, borderRadius: 3 }}>
 
                 <Typography variant="h4" align="center" gutterBottom>
                 Student Marketplace Registration 

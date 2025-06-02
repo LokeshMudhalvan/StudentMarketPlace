@@ -146,6 +146,16 @@ const SavedListing = () => {
     return (
         <>
             <Header/>
+            <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                <Button 
+                    variant="contained" 
+                    color="primary" 
+                    sx={{ mt: 2, mb: 2, mr: 2 }}
+                    onClick={() => navigate('/dashboard')}
+                >
+                    Browse Listings
+                </Button>
+            </Box>
             <Container maxWidth="lg" sx={{ py: 5 }}>
                 <Typography variant="h4" fontWeight="bold" gutterBottom align="center">
                     Saved Listings

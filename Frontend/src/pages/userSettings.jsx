@@ -117,6 +117,16 @@ const UserSettings = () => {
   return (
     <>
       <Header />
+      <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+        <Button 
+          variant="contained" 
+          color="primary" 
+          sx={{ mt: 2, mb: 2, mr: 2 }}
+          onClick={() => navigate('/dashboard')}
+        >
+          Browse Listings
+        </Button>
+      </Box>
       <Container maxWidth="sm" sx={{ mt: 6 }}>
         <Box
           sx={{

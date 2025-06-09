@@ -344,8 +344,8 @@ const SavedListing = () => {
                         <Pagination
                             count={Math.ceil(totalListings / 12)} 
                             page={currentPage}
-                            onChange={(e, page) => setCurrentPage(page)} 
-                            color="primary"
+                            onChange={(e, page) => setCurrentPage(page)}
+                            className= 'pagination' 
                         />
                     </Box>
                 )}

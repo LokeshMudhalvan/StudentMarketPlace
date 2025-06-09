@@ -136,7 +136,7 @@ const UserSettings = () => {
             boxShadow: 3,
           }}
         >
-          <Typography variant="h4" fontWeight="bold" textAlign="center" gutterBottom>
+          <Typography variant="h4" fontWeight="bold" textAlign="center" gutterBottom sx={{ color: 'black'}}>
             User Settings
           </Typography>
 
@@ -185,6 +185,7 @@ const UserSettings = () => {
             <Box
               {...getRootProps()}
               sx={{
+                color: 'black',
                 border: '2px dashed #ccc',
                 p: 3,
                 textAlign: 'center',

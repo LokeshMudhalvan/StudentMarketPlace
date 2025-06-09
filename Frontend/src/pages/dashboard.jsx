@@ -208,7 +208,7 @@ const Dashboard = () => {
                         <CircularProgress />
                     </Box>
                 ) : listings.length === 0 ? (
-                    <Typography color="text.secondary">No listings found.</Typography>
+                    <Typography >No listings found.</Typography>
                 ) : (
                     <Grid container spacing={4} sx={{ pl: '150px', alignItems: 'stretch' }}>
                         {listings.map((listing, index) => (
@@ -381,8 +381,8 @@ const Dashboard = () => {
                         <Pagination
                             count={Math.ceil(totalListings / 12)} 
                             page={currentPage}
-                            onChange={(e, page) => setCurrentPage(page)} 
-                            color="primary"
+                            onChange={(e, page) => setCurrentPage(page)}
+                            className= 'pagination'
                         />
                     </Box>
                 )}

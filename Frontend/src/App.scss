@@ -4,13 +4,15 @@ body {
     --background-color: #e7d7c9;   
     --text-color: #000;
     --card-background-color: #f4efe6;
+    --selected-page-background-color: #f4efe6;
 }
 
 body.dark {
     --header-theme-icon-color: #ffffff; 
-    --header-background-color: #8E2BFF;   
-    --background-color: #000;    
+    --header-background-color: #556b2f;   
+    --background-color: #252421;    
     --text-color: #ffffff;
+    --selected-page-background-color: #e7d7c9;
 }
 
 body {
@@ -42,6 +44,16 @@ body {
 
     .card {
         background-color: var(--card-background-color);
+    }
+
+    .pagination {
+        .css-1l5xwdx-MuiButtonBase-root-MuiPaginationItem-root {
+            color: var(--text-color);
+        }
+
+        .css-1l5xwdx-MuiButtonBase-root-MuiPaginationItem-root.Mui-selected {
+            background-color: var(--selected-page-background-color)
+        }
     }
 }
 

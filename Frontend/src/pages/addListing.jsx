@@ -178,7 +178,8 @@ const AddListing = () => {
             backgroundColor: "#f9f9f9", 
             p: 4, 
             borderRadius: 3, 
-            boxShadow: 3 
+            boxShadow: 3, 
+            color: "black" 
         }}
         >
         <Typography variant="h4" fontWeight="bold" gutterBottom textAlign="center">
